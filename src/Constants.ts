@@ -1,1 +1,3 @@
-export const staticAssetServerUrl = 'http://nonamehome.iptime.org:20310/';
+declare const SERVER_URL: string;
+
+export const staticAssetServerUrl = SERVER_URL;
