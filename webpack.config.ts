@@ -1,9 +1,29 @@
+import os from 'os';
 import path from 'path';
 import copyWebpackPlugin from 'copy-webpack-plugin';
 import eslintPlugin from 'eslint-webpack-plugin';
 import htmlWebpackPlugin from 'html-webpack-plugin';
-import type webpack from 'webpack';
+import webpack from 'webpack';
 import type { Configuration as WebpackDevServerConfiguration } from 'webpack-dev-server';
+
+const PORT = 20310;
+
+function getIpAddress() {
+  var ifaces = os.networkInterfaces();
+
+  for (const dev in ifaces) {
+    let iface = ifaces[dev]!;
+
+    for (let i = 0; i < iface.length; ++i) {
+      let { family, address, internal } = iface[i];
+
+      if (family === 'IPv4' && address !== '127.0.0.1' && !internal) {
+        return address;
+      }
+    }
+  }
+  return '127.0.0.1';
+}
 
 export default (
   env: any,
@@ -11,7 +31,7 @@ export default (
   entry: './src/index.ts',
   output: {
     // eslint-disable-next-line no-undef
-    path: path.join(__dirname, '/test_dist'),
+    path: path.join(__dirname, '/dist'),
     filename: '[name].bundle.js',
     clean: true,
   },
@@ -55,10 +75,16 @@ export default (
     new copyWebpackPlugin({
       patterns: [{ from: 'res', to: 'res' }],
     }),
+    new webpack.DefinePlugin({
+      SERVER_URL:
+        process.env.NODE_ENV === 'production'
+          ? `'${'https://3Ddemo.jiba201.com/'}'`
+          : `'http://${getIpAddress()}:${PORT}/'`,
+    }),
   ],
   devServer: {
     host: '0.0.0.0',
-    port: 20310,
+    port: PORT,
     allowedHosts: 'all',
     client: {
       logging: 'none',
