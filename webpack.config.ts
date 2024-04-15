@@ -76,10 +76,9 @@ export default (
       patterns: [{ from: 'res', to: 'res' }],
     }),
     new webpack.DefinePlugin({
-      SERVER_URL:
-        process.env.NODE_ENV === 'production'
-          ? `'${'https://3Ddemo.jiba201.com/'}'`
-          : `'http://${getIpAddress()}:${PORT}/'`,
+      SERVER_URL: env.production
+        ? `'${'https://3Ddemo.jiba201.com/'}'`
+        : `'http://${getIpAddress()}:${PORT}/'`,
     }),
   ],
   devServer: {
