@@ -1,7 +1,11 @@
 {
   "root": true,
   "env": {
-    "browser": true
+    "browser": true,
+    "node": true
+  },
+  "globals": {
+    "SERVER_URL": false
   },
   "parser": "@typescript-eslint/parser",
   "parserOptions": {
