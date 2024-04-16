@@ -28,7 +28,7 @@ function getIpAddress() {
 export default (
   env: any,
 ): webpack.Configuration & { devServer?: WebpackDevServerConfiguration } => ({
-  entry: './src/index.tsx',
+  entry: './src/ui/index.tsx',
   output: {
     // eslint-disable-next-line no-undef
     path: path.join(__dirname, '/dist'),
@@ -65,7 +65,7 @@ export default (
   },
   plugins: [
     new htmlWebpackPlugin({
-      template: './src/index.html',
+      template: './src/ui/index.html',
     }),
     new eslintPlugin({
       extensions: ['ts', 'tsx'],

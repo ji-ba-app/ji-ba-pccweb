@@ -1,29 +1,62 @@
-import '@babylonjs/core/Materials/PBR/pbrSubSurfaceConfiguration';
-import ReactDOM from 'react-dom/client';
-import { JSX, StrictMode, useEffect, useRef, useState } from 'react';
 import styled from 'styled-components';
-// import { usePCBuildSceneBuilder } from './PCBuildSceneBuilder';
-// import { PCCModel } from './runtime/PCCModel';
-import { CanvasContextProvider } from './CanvasContext';
-import { usePCBuildSceneBuilder } from './PCBuildSceneBuilder';
-import { PCCModel } from './runtime/PCCModel';
+import { JSX, useEffect } from 'react';
+import { usePCBuildSceneBuilder } from '@/PCBuildSceneBuilder';
+import { PCCModel } from '@/runtime/PCCModel';
 
-await new Promise(resolve => (window.onload = resolve));
-
-const AppRootDiv = styled.div`
+const PCCUIRootDiv = styled.div`
   width: 100%;
-  height: 100%;
+  height: 300px;
   display: flex;
   flex-direction: column;
 `;
 
-const RenderCanvas = styled.canvas`
+const PcComponentsListDiv = styled.div`
   width: 100%;
   height: 100%;
-  display: block;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  padding-bottom: 5px;
 `;
 
-function AppRoot(): JSX.Element {
+const ListItemDiv = styled.div`
+  padding: 5px;
+  padding-bottom: 0;
+  box-sizing: border-box;
+  width: 100%;
+  flex: 0 0 50px;
+  flex-direction: column;
+  text-align: center;
+  vertical-align: middle;
+`;
+
+const ListItemInnerDiv = styled.div`
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+  background-color: #f0f0f0;
+
+  &:hover {
+    background-color: #e0e0e0;
+  }
+`;
+
+interface ListItemProps {
+  name: string;
+}
+
+function ListItem(props: ListItemProps): JSX.Element {
+  return (
+    <ListItemDiv>
+      <ListItemInnerDiv>{props.name}</ListItemInnerDiv>
+    </ListItemDiv>
+  );
+}
+
+export default function PCCUIRoot(): JSX.Element {
   const builder = usePCBuildSceneBuilder();
 
   useEffect(() => {
@@ -176,41 +209,26 @@ function AppRoot(): JSX.Element {
     };
   });
 
-  return <></>;
-}
-
-function Root(): JSX.Element {
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const [canvas, setCanvas] = useState<HTMLCanvasElement | null>(null);
-
-  useEffect(() => {
-    if (canvasRef.current === null) {
-      return;
-    }
-
-    setCanvas(canvasRef.current);
-  }, [canvasRef.current]);
-
   return (
-    <AppRootDiv>
-      <RenderCanvas ref={canvasRef} />
-      <CanvasContextProvider canvas={canvas}>
-        <AppRoot />
-      </CanvasContextProvider>
-    </AppRootDiv>
+    <PCCUIRootDiv>
+      <PcComponentsListDiv>
+        <ListItem name="middle tower case" />
+        <ListItem name="120mm stock fan" />
+        <ListItem name="standard ATX power supply" />
+        <ListItem name="standard ATX motherboard" />
+        <ListItem name="LGA1700 CPU" />
+        <ListItem name="120mm CPU cooler" />
+        <ListItem name="DDR4 RAM 2400MHz" />
+        <ListItem name="NVMe m.2 SSD" />
+        <ListItem name="DDR4 RAM 2400MHz" />
+        <ListItem name="NVMe m.2 SSD" />
+        <ListItem name="DDR4 RAM 2400MHz" />
+        <ListItem name="NVMe m.2 SSD" />
+        <ListItem name="DDR4 RAM 2400MHz" />
+        <ListItem name="NVMe m.2 SSD" />
+        <ListItem name="DDR4 RAM 2400MHz" />
+        <ListItem name="NVMe m.2 SSD" />
+      </PcComponentsListDiv>
+    </PCCUIRootDiv>
   );
 }
-
-const rootDiv = document.createElement('div');
-rootDiv.style.width = '100vw';
-rootDiv.style.height = '100vh';
-rootDiv.style.margin = '0';
-rootDiv.style.padding = '0';
-document.body.appendChild(rootDiv);
-
-const reactRoot = ReactDOM.createRoot(rootDiv);
-reactRoot.render(
-  <StrictMode>
-    <Root />,
-  </StrictMode>,
-);

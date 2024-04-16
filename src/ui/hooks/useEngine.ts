@@ -1,6 +1,6 @@
 import { Engine } from '@babylonjs/core/Engines/engine';
 import { useEffect, useState } from 'react';
-import { useCanvas } from './CanvasContext';
+import { useCanvas } from '../context/CanvasContext';
 
 // for handle strict mode
 let globalEngine: Engine | undefined = undefined;

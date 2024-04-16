@@ -8,7 +8,7 @@ import { Vector3 } from '@babylonjs/core/Maths/math.vector';
 import { Scene } from '@babylonjs/core/scene';
 import { useEffect, useState } from 'react';
 import { PCCRuntime } from './runtime/PCCRuntime';
-import useEngine from './useEngine';
+import useEngine from './ui/hooks/useEngine';
 
 export class PCBuildSceneBuilder {
   public readonly runtime: PCCRuntime;
@@ -102,7 +102,11 @@ export function usePCBuildSceneBuilder(): PCBuildSceneBuilder | undefined {
     }
     if (builder === undefined) {
       setBuilder(new PCBuildSceneBuilder(engine));
-      engine.runRenderLoop(() => engine!.scenes[0].render());
+
+      // if is running in browser register render loop manually. for react-native, it will be handled automatically
+      if (window !== undefined) {
+        engine.runRenderLoop(() => engine!.scenes[0].render());
+      }
     }
     return () => {
       if (builder !== undefined) {
