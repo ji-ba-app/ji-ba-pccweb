@@ -22,7 +22,8 @@
             "@/*": [
                 "./*"
             ]
-        }
+        },
+        "jsx": "react-jsx"
     },
     "exclude": [
         "dist"

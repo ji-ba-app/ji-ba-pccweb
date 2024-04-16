@@ -6,7 +6,9 @@ import { HemisphericLight } from '@babylonjs/core/Lights/hemisphericLight';
 import { Color3, Color4 } from '@babylonjs/core/Maths/math.color';
 import { Vector3 } from '@babylonjs/core/Maths/math.vector';
 import { Scene } from '@babylonjs/core/scene';
+import { useEffect, useState } from 'react';
 import { PCCRuntime } from './runtime/PCCRuntime';
+import useEngine from './useEngine';
 
 export class PCBuildSceneBuilder {
   public readonly runtime: PCCRuntime;
@@ -86,4 +88,28 @@ export class PCBuildSceneBuilder {
 
     this._camera = undefined;
   }
+}
+
+export function usePCBuildSceneBuilder(): PCBuildSceneBuilder | undefined {
+  const engine = useEngine();
+  const [builder, setBuilder] = useState<PCBuildSceneBuilder | undefined>(
+    undefined,
+  );
+
+  useEffect(() => {
+    if (engine === undefined) {
+      return;
+    }
+    if (builder === undefined) {
+      setBuilder(new PCBuildSceneBuilder(engine));
+      engine.runRenderLoop(() => engine!.scenes[0].render());
+    }
+    return () => {
+      if (builder !== undefined) {
+        builder.dispose();
+      }
+    };
+  }, [engine, builder]);
+
+  return builder;
 }

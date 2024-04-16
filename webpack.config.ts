@@ -8,7 +8,7 @@ import type { Configuration as WebpackDevServerConfiguration } from 'webpack-dev
 export default (
   env: any,
 ): webpack.Configuration & { devServer?: WebpackDevServerConfiguration } => ({
-  entry: './src/index.ts',
+  entry: './src/index.tsx',
   output: {
     // eslint-disable-next-line no-undef
     path: path.join(__dirname, '/test_dist'),
