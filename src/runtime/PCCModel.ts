@@ -64,6 +64,7 @@ export class PCCModel {
   private _pendingDisposal: boolean;
 
   public onDisposeObservable: Observable<PCCModel>;
+  private _isDisposed: boolean;
 
   public constructor(
     taskExecutor: TaskExecutor,
@@ -99,6 +100,7 @@ export class PCCModel {
     this._pendingDisposal = false;
 
     this.onDisposeObservable = new Observable();
+    this._isDisposed = false;
   }
 
   public animate(time: number): void {
@@ -120,6 +122,10 @@ export class PCCModel {
   }
 
   public createInstance(name: string): PCCModel {
+    if (this._isDisposed) {
+      throw new Error('Model is disposed');
+    }
+
     const clonedRoot = this.root.clone(this.root.name, null, true)!;
     clonedRoot.setEnabled(false);
 
@@ -247,7 +253,20 @@ export class PCCModel {
   }
 
   public dispose(skipAnimation = false): void {
+    if (this._isDisposed) {
+      return;
+    }
+
+    this._isDisposed = true;
+
     const dependencies: ReadonlyTask[] = [];
+
+    if (this.mountedPoint !== undefined) {
+      const detachResult = this.mountedPoint.detach(false);
+      if (detachResult !== undefined) {
+        dependencies.push(detachResult[1]);
+      }
+    }
 
     const mountPoints = this.mountPoints;
     for (let i = 0; i < mountPoints.length; ++i) {
@@ -291,5 +310,9 @@ export class PCCModel {
         this._originalModel!.dispose();
       }
     }
+  }
+
+  public get isDisposed(): boolean {
+    return this._isDisposed;
   }
 }

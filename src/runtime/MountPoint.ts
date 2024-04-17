@@ -70,6 +70,9 @@ export class MountPoint {
     model: PCCModel,
     skipAnimation = false,
   ): ReadonlyTask | undefined {
+    if (model.isDisposed) {
+      return undefined;
+    }
     const point = this.findCompatiblePoint(model);
     if (point === undefined) {
       return undefined;
@@ -81,7 +84,6 @@ export class MountPoint {
 
     if (model.mountedPoint !== undefined) {
       model.mountedPoint.detach(true);
-      model.mountedPoint = undefined;
     }
     model.mountedPoint = this;
 
@@ -146,6 +148,8 @@ export class MountPoint {
     const attachedModel = this._attachedModel;
     if (!attachedModel) return undefined;
     this._attachedModel = undefined;
+
+    attachedModel.mountedPoint = undefined;
 
     const dependencies = taskExecutor.collectTasksWithTarget(
       attachedModel.root,

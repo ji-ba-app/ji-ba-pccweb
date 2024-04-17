@@ -17,7 +17,7 @@ const AppRootDiv = styled.div`
 
 const RenderCanvas = styled.canvas`
   width: 100%;
-  flex-grow: 1;
+  height: 55%;
   display: block;
   outline: none;
 `;

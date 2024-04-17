@@ -10,12 +10,14 @@ import {
 import { usePCBuildSceneBuilder } from '@/PCBuildSceneBuilder';
 import { PCCModel } from '@/runtime/PCCModel';
 import { ToggleTarget } from '@/runtime/ToggleTarget';
+import { PCCRuntime } from '@/runtime/PCCRuntime';
 
 const TreeViewRerenderContext = createContext<() => void>(() => {});
+const PCCRuntimeContext = createContext<PCCRuntime | undefined>(undefined);
 
 const PCCUIRootDiv = styled.div`
   width: 100%;
-  height: 400px;
+  height: 45%;
   display: flex;
   flex-direction: column;
 `;
@@ -50,7 +52,7 @@ const TreeItemTitleDiv = styled.div`
   background-color: #919191;
   color: white;
   font-weight: bold;
-  font-size: 20px;
+  font-size: 16px;
 `;
 
 const TreeItemDropdownToggleDiv = styled.div`
@@ -76,14 +78,19 @@ const ToggleTargetHintDiv = styled.div`
 
 const TreeItemTitleInnerDiv = styled.div`
   flex: 1;
-  margin-right: 40px;
   align-content: center;
-  text-align: center;
+  text-align: right;
 `;
 
-interface TreeItemToggleDivProps {
-  enabled: boolean;
-}
+const TreeItemDisposeButtonDiv = styled.div`
+  width: 40px;
+  text-align: center;
+  align-items: center;
+  color: white;
+  font-weight: bold;
+  font-size: 20px;
+  transform: translateY(-2px);
+`;
 
 const TreeItemToggleOuterDiv = styled.div`
   width: 100%;
@@ -103,6 +110,10 @@ const TreeItemTogglesContainerDiv = styled.div`
   border-top-width: 0;
 `;
 
+interface TreeItemToggleDivProps {
+  $enabled: boolean;
+}
+
 const TreeItemToggleDiv = styled.div<TreeItemToggleDivProps>`
   width: 100%;
   height: 100%;
@@ -111,7 +122,7 @@ const TreeItemToggleDiv = styled.div<TreeItemToggleDivProps>`
   justify-content: center;
   align-items: center;
   background-color: #d8d8d8;
-  opacity: ${props => (props.enabled ? 1 : 0.5)};
+  opacity: ${props => (props.$enabled ? 1 : 0.5)};
   transition: opacity 0.2s;
 `;
 
@@ -131,7 +142,7 @@ function TreeItemToggle(props: TreeItemToggleProps): JSX.Element {
 
   return (
     <TreeItemToggleOuterDiv>
-      <TreeItemToggleDiv onClick={onToggle} enabled={toggleTarget.enabled}>
+      <TreeItemToggleDiv onClick={onToggle} $enabled={toggleTarget.enabled}>
         {toggleTarget.name}
       </TreeItemToggleDiv>
     </TreeItemToggleOuterDiv>
@@ -146,10 +157,13 @@ const TreeItemContentOuterDiv = styled.div`
 `;
 
 const VerticalLineDiv = styled.div`
-  width: 10px;
+  width: 5px;
   height: 100%;
   margin-left: 10px;
-  background-color: #979797;
+  padding-top: 5px;
+  padding-bottom: 5px;
+  box-sizing: border-box;
+  background-color: #5a5a5a;
   border-radius: 40px;
 `;
 
@@ -158,32 +172,82 @@ const TreeItemContentDiv = styled.div`
   height: auto;
   display: flex;
   flex-direction: column;
-  padding-left: 20px;
-  padding-top: 5px;
+  padding-left: 10px;
+  padding-right: 10px;
   box-sizing: border-box;
 `;
 
-interface TreePCCItemProps {
+const EmptyMountPointDiv = styled.div`
+  padding: 5px;
+  padding-bottom: 0;
+  box-sizing: border-box;
+  width: 100%;
+  flex: 0 0 50px;
+  flex-direction: column;
+  text-align: center;
+  vertical-align: middle;
+`;
+
+const EmptyMountPointInnerDiv = styled.div`
+  width: 100%;
+  height: 40px;
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  background-color: #769955;
+  color: white;
+`;
+
+const MountPointNameDiv = styled.div`
+  font-weight: normal;
+  font-size: 16px;
+  padding-left: 10px;
+`;
+
+const MountPointAttachHintDiv = styled.div`
+  font-size: 12px;
+  font-weight: normal;
+  color: #d8d8d8;
+  padding-right: 10px;
+`;
+
+interface TreePCCViewProps {
   model: PCCModel;
-  children?: JSX.Element | JSX.Element[];
 }
 
-function TreePCCItem(props: TreePCCItemProps): JSX.Element {
+function TreePCCView(props: TreePCCViewProps): JSX.Element {
   const { model } = props;
 
+  const rerender = useContext(TreeViewRerenderContext);
+  const runtime = useContext(PCCRuntimeContext);
+
   const [isShowingToggleTargets, setIsShowingToggleTargets] = useState(false);
+
+  const onDispose = useCallback(() => {
+    model.onDisposeObservable.addOnce(() => {
+      runtime?.disposeUnboundedModels();
+    });
+    model.dispose();
+    rerender();
+  }, [model]);
 
   return (
     <>
       <TreeItemDiv>
         <TreeItemTitleDiv>
-          <TreeItemDropdownToggleDiv
-            onClick={() => setIsShowingToggleTargets(!isShowingToggleTargets)}
-          >
-            {isShowingToggleTargets ? '▼' : '▶'}
-            <ToggleTargetHintDiv>Toggle Targets</ToggleTargetHintDiv>
-          </TreeItemDropdownToggleDiv>
+          {model.toggleTargets.length > 0 ? (
+            <TreeItemDropdownToggleDiv
+              onClick={() => setIsShowingToggleTargets(!isShowingToggleTargets)}
+            >
+              {isShowingToggleTargets ? '▼' : '▶'}
+              <ToggleTargetHintDiv>Toggle Targets</ToggleTargetHintDiv>
+            </TreeItemDropdownToggleDiv>
+          ) : null}
           <TreeItemTitleInnerDiv>{model.name}</TreeItemTitleInnerDiv>
+          <TreeItemDisposeButtonDiv onClick={onDispose}>
+            ✖
+          </TreeItemDisposeButtonDiv>
         </TreeItemTitleDiv>
         {isShowingToggleTargets ? (
           <TreeItemTogglesContainerDiv>
@@ -196,51 +260,44 @@ function TreePCCItem(props: TreePCCItemProps): JSX.Element {
           </TreeItemTogglesContainerDiv>
         ) : null}
       </TreeItemDiv>
-      <TreeItemContentOuterDiv>
-        <VerticalLineDiv />
-        <TreeItemContentDiv>{props.children}</TreeItemContentDiv>
-      </TreeItemContentOuterDiv>
+      {model.mountPoints.length > 0 ? (
+        <TreeItemContentOuterDiv>
+          <VerticalLineDiv />
+          <TreeItemContentDiv>
+            {model.mountPoints.map(mountPoint =>
+              mountPoint.attachedModel ? (
+                <TreePCCView
+                  key={mountPoint.name}
+                  model={mountPoint.attachedModel}
+                />
+              ) : (
+                <EmptyMountPointDiv key={mountPoint.name}>
+                  <EmptyMountPointInnerDiv>
+                    <MountPointNameDiv>{mountPoint.name}</MountPointNameDiv>
+                    <MountPointAttachHintDiv>
+                      click here to attach new component
+                    </MountPointAttachHintDiv>
+                  </EmptyMountPointInnerDiv>
+                </EmptyMountPointDiv>
+              ),
+            )}
+          </TreeItemContentDiv>
+        </TreeItemContentOuterDiv>
+      ) : null}
     </>
   );
 }
-
-// interface TreeViewProps {
-//   currentModel: PCCModel | null;
-// }
-
-// function TreeView(props: TreeViewProps): JSX.Element {
-//   const { currentModel } = props;
-
-//   if (currentModel === null) {
-//     return <></>;
-//   }
-
-//   const mountPoints = currentModel.mountPoints;
-//   const toggleTargets = currentModel.toggleTargets;
-
-//   return (
-//     <TreePCCItem key={currentModel.name} name={currentModel.name}>
-//       {mountPoints.map(mountPoint => (
-//         <TreePCCItem key={mountPoint.name} name={mountPoint.name}>
-//           <TreeView currentModel={mountPoint.attachedModel ?? null} />
-//         </TreePCCItem>
-//       ))}
-//       {toggleTargets.map(toggleTarget => (
-//         <TreePCCItem key={toggleTarget.name} name={toggleTarget.name}>
-//           <TreeView currentModel={null} />
-//         </TreePCCItem>
-//       ))}
-//     </TreePCCItem>
-//   );
-// }
 
 export default function PCCUIRoot(): JSX.Element {
   const builder = usePCBuildSceneBuilder();
 
   const [isInitialized, setIsInitialized] = useState(false);
-  const [rerenderState, setRerenderState] = useState(false);
+  const [_, setRerenderState] = useState(false);
 
-  const [testRoot, setTestRoot] = useState<PCCModel | null>(null);
+  const [baseModel, setBaseModel] = useState<PCCModel | undefined>(undefined);
+  const onBaseModelChanged = useCallback((model: PCCModel | undefined) => {
+    setBaseModel(model);
+  }, []);
 
   useEffect(() => {
     if (builder === undefined) {
@@ -256,11 +313,11 @@ export default function PCCUIRoot(): JSX.Element {
     const runtime = builder.runtime;
     runtime.playAnimation();
 
+    runtime.onBaseModelChangedObservable.add(onBaseModelChanged);
+
     (async () => {
       const caseModel = (await runtime.addModel('res/case_sample.glb'))!;
       runtime.setBaseModel(caseModel);
-
-      setTestRoot(caseModel);
 
       const fanModels: PCCModel[] = [];
       for (let i = 0; i < 5; ++i) {
@@ -296,7 +353,10 @@ export default function PCCUIRoot(): JSX.Element {
         const mountPoints = caseModel.mountPoints;
         for (let i = 0; i < mountPoints.length; ++i) {
           const mountPoint = mountPoints[i];
-          if (mountPoint.attach(fanModels[fanModelIndex])) {
+          if (
+            !caseModel.isDisposed &&
+            mountPoint.attach(fanModels[fanModelIndex])
+          ) {
             fanModelIndex += 1;
             await new Promise(resolve => setTimeout(resolve, 200));
           }
@@ -311,7 +371,7 @@ export default function PCCUIRoot(): JSX.Element {
         const mountPoints = caseModel.mountPoints;
         for (let i = 0; i < mountPoints.length; ++i) {
           const mountPoint = mountPoints[i];
-          if (mountPoint.attach(powserSupplyModel)) {
+          if (!caseModel.isDisposed && mountPoint.attach(powserSupplyModel)) {
             break;
           }
         }
@@ -327,7 +387,7 @@ export default function PCCUIRoot(): JSX.Element {
         const mountPoints = caseModel.mountPoints;
         for (let i = 0; i < mountPoints.length; ++i) {
           const mountPoint = mountPoints[i];
-          if (mountPoint.attach(motherBorardModel)) {
+          if (!caseModel.isDisposed && mountPoint.attach(motherBorardModel)) {
             await new Promise(resolve => setTimeout(resolve, 200));
             break;
           }
@@ -338,7 +398,7 @@ export default function PCCUIRoot(): JSX.Element {
         const mountPoints = motherBorardModel.mountPoints;
         for (let i = 0; i < mountPoints.length; ++i) {
           const mountPoint = mountPoints[i];
-          if (mountPoint.attach(cpuModel)) {
+          if (!motherBorardModel.isDisposed && mountPoint.attach(cpuModel)) {
             await new Promise(resolve => setTimeout(resolve, 200));
             break;
           }
@@ -349,7 +409,7 @@ export default function PCCUIRoot(): JSX.Element {
         const mountPoints = motherBorardModel.mountPoints;
         for (let i = 0; i < mountPoints.length; ++i) {
           const mountPoint = mountPoints[i];
-          if (mountPoint.attach(coolerModel)) {
+          if (!motherBorardModel.isDisposed && mountPoint.attach(coolerModel)) {
             await new Promise(resolve => setTimeout(resolve, 200));
             break;
           }
@@ -361,7 +421,10 @@ export default function PCCUIRoot(): JSX.Element {
         const mountPoints = motherBorardModel.mountPoints;
         for (let i = 0; i < mountPoints.length; ++i) {
           const mountPoint = mountPoints[i];
-          if (mountPoint.attach(ramModels[ramModelIndex])) {
+          if (
+            !motherBorardModel.isDisposed &&
+            mountPoint.attach(ramModels[ramModelIndex])
+          ) {
             ramModelIndex += 1;
             await new Promise(resolve => setTimeout(resolve, 200));
           }
@@ -376,7 +439,10 @@ export default function PCCUIRoot(): JSX.Element {
         const mountPoints = motherBorardModel.mountPoints;
         for (let i = 0; i < mountPoints.length; ++i) {
           const mountPoint = mountPoints[i];
-          if (mountPoint.attach(storageModel)) {
+          if (
+            !motherBorardModel.isDisposed &&
+            mountPoint.attach(storageModel)
+          ) {
             await new Promise(resolve => setTimeout(resolve, 200));
             break;
           }
@@ -387,14 +453,14 @@ export default function PCCUIRoot(): JSX.Element {
         const mountPoints = motherBorardModel.mountPoints;
         for (let i = 0; i < mountPoints.length; ++i) {
           const mountPoint = mountPoints[i];
-          if (mountPoint.attach(gpuModel)) {
+          if (!motherBorardModel.isDisposed && mountPoint.attach(gpuModel)) {
             await new Promise(resolve => setTimeout(resolve, 200));
             break;
           }
         }
       }
 
-      setRerenderState(!rerenderState);
+      setRerenderState(x => !x);
     })();
   }, [builder, isInitialized]);
 
@@ -402,20 +468,22 @@ export default function PCCUIRoot(): JSX.Element {
     <PCCUIRootDiv>
       <PcComponentsListDiv>
         <TreeViewRerenderContext.Provider
-          value={() => setRerenderState(!rerenderState)}
+          value={() => setRerenderState(x => !x)}
         >
-          {testRoot === null ? null : <TreePCCItem model={testRoot} />}
-          {/* <TreeView currentModel={builder?.runtime.baseModel ?? null} /> */}
-          {/* <TreeItem name="middle tower case">
-          <TreeItem name="120mm stock fan"></TreeItem>
-          <TreeItem name="standard ATX power supply"></TreeItem>
-          <TreeItem name="standard ATX motherboard">
-            <TreeItem name="LGA1700 CPU"></TreeItem>
-            <TreeItem name="120mm CPU cooler"></TreeItem>
-            <TreeItem name="DDR4 RAM 2400MHz"></TreeItem>
-            <TreeItem name="NVMe m.2 SSD"></TreeItem>
-          </TreeItem>
-        </TreeItem> */}
+          <PCCRuntimeContext.Provider value={builder?.runtime}>
+            {baseModel ? (
+              <TreePCCView model={baseModel} />
+            ) : (
+              <EmptyMountPointDiv>
+                <EmptyMountPointInnerDiv>
+                  <MountPointNameDiv>Base Model</MountPointNameDiv>
+                  <MountPointAttachHintDiv>
+                    click here to attach new component
+                  </MountPointAttachHintDiv>
+                </EmptyMountPointInnerDiv>
+              </EmptyMountPointDiv>
+            )}
+          </PCCRuntimeContext.Provider>
         </TreeViewRerenderContext.Provider>
       </PcComponentsListDiv>
     </PCCUIRootDiv>

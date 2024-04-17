@@ -1,4 +1,5 @@
 import { Scene } from '@babylonjs/core/scene';
+import { Observable } from '@babylonjs/core/Misc/observable';
 import { PCCModelLoader } from '../loader/PCCModelLoader';
 import { PCCModel } from './PCCModel';
 import { TaskExecutor } from './TaskExecutor';
@@ -17,6 +18,8 @@ export class PCCRuntime {
 
   private _baseModel: PCCModel | undefined;
 
+  public onBaseModelChangedObservable: Observable<PCCModel | undefined>;
+
   public constructor(scene: Scene) {
     this._loader = new PCCModelLoader(scene);
     this._taskExecutor = new TaskExecutor();
@@ -31,6 +34,8 @@ export class PCCRuntime {
     this._isPlayingAnimation = false;
 
     this._baseModel = undefined;
+
+    this.onBaseModelChangedObservable = new Observable();
   }
 
   public register(): void {
@@ -80,8 +85,25 @@ export class PCCRuntime {
     }
 
     this._models.push(model);
+
+    model.onDisposeObservable.add(this._onDisposeModel);
+
     return model;
   }
+
+  private readonly _onDisposeModel = (model: PCCModel): void => {
+    const index = this._models.indexOf(model);
+    if (index === -1) {
+      return;
+    }
+
+    this._models.splice(index, 1);
+
+    if (model === this._baseModel) {
+      this._baseModel = undefined;
+      this.onBaseModelChangedObservable.notifyObservers(undefined);
+    }
+  };
 
   public setBaseModel(model: PCCModel): void {
     if (this._baseModel !== undefined) {
@@ -90,9 +112,27 @@ export class PCCRuntime {
 
     this._baseModel = model;
     this._baseModel.root.setEnabled(true);
+
+    this.onBaseModelChangedObservable.notifyObservers(this._baseModel);
   }
 
   public get baseModel(): PCCModel | undefined {
     return this._baseModel;
+  }
+
+  public disposeUnboundedModels(): void {
+    const models = [...this._models];
+    for (let i = 0; i < models.length; ++i) {
+      const model = models[i];
+      if (model.mountedPoint !== undefined) {
+        continue;
+      }
+
+      if (model === this._baseModel) {
+        continue;
+      }
+
+      model.dispose(true);
+    }
   }
 }
