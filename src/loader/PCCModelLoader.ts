@@ -102,7 +102,7 @@ export class PCCModelLoader {
     for (let i = 0; i < nodeInfoList.length; ++i) {
       const nodeInfo = nodeInfoList[i];
 
-      if (nodeInfo.toggleTargets !== undefined) {
+      if (nodeInfo.toggleTargets.length > 0) {
         toggleTargets.push(
           new ToggleTarget(nodeInfo.name, nodeInfo.toggleTargets),
         );

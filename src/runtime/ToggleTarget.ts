@@ -1,5 +1,6 @@
 import { TransformNode } from '@babylonjs/core/Meshes/transformNode';
 import { Quaternion, Vector3 } from '@babylonjs/core/Maths/math.vector';
+import { DeepImmutable } from '@babylonjs/core/types';
 import { PCCNodeInfo } from '@/loader/PCCNodeDecoder';
 import { TaskExecutor } from './TaskExecutor';
 import { ReadonlyTask } from './Task';
@@ -8,11 +9,13 @@ class ToggleActiveCounter {
   private readonly _target: TransformNode;
   private readonly _taskExecutor: TaskExecutor;
   private readonly _disabledToggles: Set<object>;
+  private readonly _targetInitialPosition: DeepImmutable<Vector3>;
 
   public constructor(target: TransformNode, taskExecutor: TaskExecutor) {
     this._target = target;
     this._taskExecutor = taskExecutor;
     this._disabledToggles = new Set<object>();
+    this._targetInitialPosition = target.position.clone();
   }
 
   public get enabled(): boolean {
@@ -76,14 +79,14 @@ class ToggleActiveCounter {
       () => this._target.setEnabled(true),
       () => void 0,
       0.5,
-      this._target.position
+      this._targetInitialPosition
         .clone()
         .addInPlace(
           ToggleActiveCounter._tempVector
             .set(0, 0.03 / parentWorldScale, 0)
             .applyRotationQuaternionInPlace(rotation),
         ),
-      this._target.position,
+      this._targetInitialPosition,
     );
 
     return task;
@@ -115,8 +118,8 @@ class ToggleActiveCounter {
       () => void 0,
       () => this._target.setEnabled(false),
       0.5,
-      this._target.position,
-      this._target.position
+      this._targetInitialPosition,
+      this._targetInitialPosition
         .clone()
         .addInPlace(
           ToggleActiveCounter._tempVector

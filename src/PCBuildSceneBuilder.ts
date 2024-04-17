@@ -33,7 +33,7 @@ export class PCBuildSceneBuilder {
       'camera1',
       115 * degToRad, // alpha
       80 * degToRad, // beta
-      1.1, // radius
+      0.8, // radius
       new Vector3(0, 0.2, 0), // target
       scene,
     );
@@ -44,7 +44,7 @@ export class PCBuildSceneBuilder {
     camera.wheelDeltaPercentage = 0.005;
     camera.pinchDeltaPercentage = 0.001;
     camera.lowerRadiusLimit = 0.2;
-    camera.upperRadiusLimit = 2;
+    camera.upperRadiusLimit = 1.5;
     camera.panningDistanceLimit = 0.3;
     camera.panningInertia = 0.8;
     camera.panningSensibility = 3000;

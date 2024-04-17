@@ -39,7 +39,7 @@ export default function useEngine(): Engine | undefined {
         },
         true,
       );
-      newEngine.setHardwareScalingLevel(1.2);
+      // newEngine.setHardwareScalingLevel(1.2);
 
       window.addEventListener('resize', () => newEngine.resize());
 

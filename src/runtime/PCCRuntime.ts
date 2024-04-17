@@ -91,4 +91,8 @@ export class PCCRuntime {
     this._baseModel = model;
     this._baseModel.root.setEnabled(true);
   }
+
+  public get baseModel(): PCCModel | undefined {
+    return this._baseModel;
+  }
 }
