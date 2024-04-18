@@ -110,8 +110,12 @@ export class PCCRuntime {
       this._baseModel.root.setEnabled(false);
     }
 
-    this._baseModel = model;
-    this._baseModel.root.setEnabled(true);
+    if (model.isDisposed) {
+      this._baseModel = undefined;
+    } else {
+      this._baseModel = model;
+      this._baseModel.root.setEnabled(true);
+    }
 
     this.onBaseModelChangedObservable.notifyObservers(this._baseModel);
   }
