@@ -7,17 +7,30 @@ import PCCUIRoot from './component/PCCUIRoot';
 
 await new Promise(resolve => (window.onload = resolve));
 
+export const verticalUiSize = 'min(120mm, 45%)';
+export const horizontalUiSize = 'min(100mm, 35%)';
+
 const AppRootDiv = styled.div`
   width: 100%;
   height: 100%;
   display: flex;
-  flex-direction: column;
+
+  flex-direction: row;
+  @media (max-width: 768px) {
+    flex-direction: column;
+  }
   font-family: 'Arial', sans-serif;
 `;
 
 const RenderCanvas = styled.canvas`
-  width: 100%;
-  height: 55%;
+  @media (max-width: 768px) {
+    width: 100%;
+    height: calc(100% - ${() => verticalUiSize});
+  }
+  @media (min-width: 768px) {
+    width: calc(100% - ${() => horizontalUiSize});
+    height: 100%;
+  }
   display: block;
   outline: none;
 `;

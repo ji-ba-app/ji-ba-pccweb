@@ -13,11 +13,19 @@ import { ToggleTarget } from '@/runtime/ToggleTarget';
 import { PCCRuntime } from '@/runtime/PCCRuntime';
 import { MountPoint } from '@/runtime/MountPoint';
 import { Compatibility } from '@/loader/Compatibility';
+import { verticalUiSize, horizontalUiSize } from '..';
 
 const PCCUIRootDiv = styled.div`
-  width: 100%;
-  height: 45%;
+  @media (max-width: 768px) {
+    width: 100%;
+    height: ${() => verticalUiSize};
+  }
+  @media (min-width: 768px) {
+    width: ${() => horizontalUiSize};
+    height: 100%;
+  }
   position: relative;
+  overflow: hidden;
 `;
 
 const PcComponentsListDiv = styled.div`
