@@ -121,7 +121,7 @@ export class PCCRuntime {
       this._baseModel.root.setEnabled(true);
     }
 
-    if (this._scene.meshes.length > 0) {
+    if (this._baseModel !== undefined) {
       const worldExtends = this._scene.getWorldExtends(function (mesh) {
         return mesh.isVisible && mesh.isEnabled();
       });
