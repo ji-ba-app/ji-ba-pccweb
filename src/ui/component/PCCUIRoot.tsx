@@ -16,11 +16,11 @@ import { Compatibility } from '@/loader/Compatibility';
 import { verticalUiSize, horizontalUiSize } from '..';
 
 const PCCUIRootDiv = styled.div`
-  @media (max-width: 768px) {
+  @media screen and (orientation: portrait) {
     width: 100%;
     height: ${() => verticalUiSize};
   }
-  @media (min-width: 768px) {
+  @media screen and (orientation: landscape) {
     width: ${() => horizontalUiSize};
     height: 100%;
   }

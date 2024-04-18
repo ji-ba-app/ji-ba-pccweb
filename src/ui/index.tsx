@@ -16,18 +16,18 @@ const AppRootDiv = styled.div`
   display: flex;
 
   flex-direction: row;
-  @media (max-width: 768px) {
+  @media screen and (orientation: portrait) {
     flex-direction: column;
   }
   font-family: 'Arial', sans-serif;
 `;
 
 const RenderCanvas = styled.canvas`
-  @media (max-width: 768px) {
+  @media screen and (orientation: portrait) {
     width: 100%;
     height: calc(100% - ${() => verticalUiSize});
   }
-  @media (min-width: 768px) {
+  @media screen and (orientation: landscape) {
     width: calc(100% - ${() => horizontalUiSize});
     height: 100%;
   }
