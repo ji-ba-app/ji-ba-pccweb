@@ -86,12 +86,12 @@ export class PCCRuntime {
 
     this._models.push(model);
 
-    model.onDisposeObservable.add(this._onDisposeModel);
+    model.onDisposeEarlyObservable.addOnce(this._onDisposeEarlyModel);
 
     return model;
   }
 
-  private readonly _onDisposeModel = (model: PCCModel): void => {
+  private readonly _onDisposeEarlyModel = (model: PCCModel): void => {
     const index = this._models.indexOf(model);
     if (index === -1) {
       return;

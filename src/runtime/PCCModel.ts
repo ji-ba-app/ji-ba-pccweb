@@ -63,6 +63,7 @@ export class PCCModel {
 
   private _pendingDisposal: boolean;
 
+  public onDisposeEarlyObservable: Observable<PCCModel>;
   public onDisposeObservable: Observable<PCCModel>;
   private _isDisposed: boolean;
 
@@ -99,6 +100,7 @@ export class PCCModel {
 
     this._pendingDisposal = false;
 
+    this.onDisposeEarlyObservable = new Observable();
     this.onDisposeObservable = new Observable();
     this._isDisposed = false;
   }
@@ -122,12 +124,11 @@ export class PCCModel {
   }
 
   public createInstance(name: string): PCCModel {
-    if (this._isDisposed) {
-      throw new Error('Model is disposed');
-    }
-
     const clonedRoot = this.root.clone(this.root.name, null, true)!;
     clonedRoot.setEnabled(false);
+
+    const rootWorldMatrix = this.root.computeWorldMatrix(true);
+    rootWorldMatrix.decompose(clonedRoot.scaling);
 
     const nodeMap = new Map<Node, Node>();
 
@@ -248,6 +249,7 @@ export class PCCModel {
       animations,
       this._originalModel ?? this,
     );
+
     this._instanceModels.push(instance);
     return instance;
   }
@@ -256,8 +258,9 @@ export class PCCModel {
     if (this._isDisposed) {
       return;
     }
-
     this._isDisposed = true;
+
+    this.onDisposeEarlyObservable.notifyObservers(this);
 
     const dependencies: ReadonlyTask[] = [];
 
@@ -274,6 +277,8 @@ export class PCCModel {
       if (detachResult !== undefined) {
         dependencies.push(detachResult[1]);
       }
+
+      mountPoints[i].disable();
     }
 
     const taskExecutor = this.taskExecutor;
@@ -307,7 +312,8 @@ export class PCCModel {
         this._originalModel._pendingDisposal &&
         this._instanceModels.length === 0
       ) {
-        this._originalModel!.dispose();
+        this._originalModel.onDisposeObservable.notifyObservers(this);
+        this._originalModel.root.dispose(false, true);
       }
     }
   }

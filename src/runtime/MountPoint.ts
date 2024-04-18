@@ -1,4 +1,3 @@
-import { Mesh } from '@babylonjs/core/Meshes/mesh';
 import { TransformNode } from '@babylonjs/core/Meshes/transformNode';
 import { Compatibility } from '@/loader/Compatibility';
 import { PCCModel } from './PCCModel';
@@ -36,6 +35,7 @@ export class MountPoint {
 
   private _attachedModel: PCCModel | undefined;
   private _taskExecutor: TaskExecutor | undefined;
+  private _disabled: boolean;
 
   /**
    * Create a new mount point
@@ -48,6 +48,11 @@ export class MountPoint {
 
     this._attachedModel = undefined;
     this._taskExecutor = undefined;
+    this._disabled = false;
+  }
+
+  public disable(): void {
+    this._disabled = true;
   }
 
   public clone(): MountPoint {
@@ -70,6 +75,10 @@ export class MountPoint {
     model: PCCModel,
     skipAnimation = false,
   ): ReadonlyTask | undefined {
+    if (this._disabled) {
+      return undefined;
+    }
+
     if (model.isDisposed) {
       return undefined;
     }
@@ -199,15 +208,8 @@ export class MountPoint {
     let node = this.points[index]?.node;
     if (!node) return false;
 
-    if (node.isEnabled(true)) return false;
+    if (!node.isEnabled(true)) return false;
 
-    let parent = node.parent;
-    while (parent) {
-      if (parent instanceof Mesh) {
-        return false;
-      }
-      parent = parent.parent;
-    }
     return true;
   }
 

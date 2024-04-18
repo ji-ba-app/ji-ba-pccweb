@@ -11,15 +11,13 @@ import { usePCBuildSceneBuilder } from '@/PCBuildSceneBuilder';
 import { PCCModel } from '@/runtime/PCCModel';
 import { ToggleTarget } from '@/runtime/ToggleTarget';
 import { PCCRuntime } from '@/runtime/PCCRuntime';
-
-const TreeViewRerenderContext = createContext<() => void>(() => {});
-const PCCRuntimeContext = createContext<PCCRuntime | undefined>(undefined);
+import { MountPoint } from '@/runtime/MountPoint';
+import { Compatibility } from '@/loader/Compatibility';
 
 const PCCUIRootDiv = styled.div`
   width: 100%;
   height: 45%;
-  display: flex;
-  flex-direction: column;
+  position: relative;
 `;
 
 const PcComponentsListDiv = styled.div`
@@ -126,6 +124,8 @@ const TreeItemToggleDiv = styled.div<TreeItemToggleDivProps>`
   transition: opacity 0.2s;
 `;
 
+const TreeViewRerenderContext = createContext<() => void>(() => {});
+
 interface TreeItemToggleProps {
   toggleTarget: ToggleTarget;
 }
@@ -212,12 +212,39 @@ const MountPointAttachHintDiv = styled.div`
   padding-right: 10px;
 `;
 
+interface EmptyMountPointProps {
+  mountPoint: MountPoint | 'root';
+  onClick: (mountPoint: MountPoint | 'root') => void;
+}
+
+function EmptyMountPoint(props: EmptyMountPointProps): JSX.Element {
+  const { mountPoint, onClick } = props;
+
+  return (
+    <EmptyMountPointDiv
+      key={typeof mountPoint === 'string' ? mountPoint : mountPoint.name}
+    >
+      <EmptyMountPointInnerDiv onClick={() => onClick(mountPoint)}>
+        <MountPointNameDiv>
+          {typeof mountPoint === 'string' ? mountPoint : mountPoint.name}
+        </MountPointNameDiv>
+        <MountPointAttachHintDiv>
+          click here to attach new component
+        </MountPointAttachHintDiv>
+      </EmptyMountPointInnerDiv>
+    </EmptyMountPointDiv>
+  );
+}
+
+const PCCRuntimeContext = createContext<PCCRuntime | undefined>(undefined);
+
 interface TreePCCViewProps {
   model: PCCModel;
+  onClickEmptyMountPoint: (mountPoint: MountPoint | 'root') => void;
 }
 
 function TreePCCView(props: TreePCCViewProps): JSX.Element {
-  const { model } = props;
+  const { model, onClickEmptyMountPoint } = props;
 
   const rerender = useContext(TreeViewRerenderContext);
   const runtime = useContext(PCCRuntimeContext);
@@ -225,9 +252,7 @@ function TreePCCView(props: TreePCCViewProps): JSX.Element {
   const [isShowingToggleTargets, setIsShowingToggleTargets] = useState(false);
 
   const onDispose = useCallback(() => {
-    model.onDisposeObservable.addOnce(() => {
-      runtime?.disposeUnboundedModels();
-    });
+    model.onDisposeObservable.addOnce(() => runtime?.disposeUnboundedModels());
     model.dispose();
     rerender();
   }, [model]);
@@ -269,22 +294,152 @@ function TreePCCView(props: TreePCCViewProps): JSX.Element {
                 <TreePCCView
                   key={mountPoint.name}
                   model={mountPoint.attachedModel}
+                  onClickEmptyMountPoint={onClickEmptyMountPoint}
                 />
               ) : (
-                <EmptyMountPointDiv key={mountPoint.name}>
-                  <EmptyMountPointInnerDiv>
-                    <MountPointNameDiv>{mountPoint.name}</MountPointNameDiv>
-                    <MountPointAttachHintDiv>
-                      click here to attach new component
-                    </MountPointAttachHintDiv>
-                  </EmptyMountPointInnerDiv>
-                </EmptyMountPointDiv>
+                <EmptyMountPoint
+                  key={mountPoint.name}
+                  mountPoint={mountPoint}
+                  onClick={onClickEmptyMountPoint}
+                />
               ),
             )}
           </TreeItemContentDiv>
         </TreeItemContentOuterDiv>
       ) : null}
     </>
+  );
+}
+
+interface ComponentListPanelDivProps {
+  $isShowing: boolean;
+}
+
+const ComponentListPanelDiv = styled.div<ComponentListPanelDivProps>`
+  position: absolute;
+  top: 0;
+  left: ${props => (props.$isShowing ? '0' : '100%')};
+  width: 100%;
+  height: 100%;
+  background-color: #b9b9b9;
+  transition: left 0.2s;
+
+  padding: 10px;
+`;
+
+const ComponentListPanelInnerDiv = styled.div`
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+`;
+
+interface ComponentListPanelProps {
+  target: MountPoint | 'root' | undefined;
+  onSelected: (modelUrl: string) => void;
+}
+
+interface ComponentListItemInfo {
+  name: string;
+  url: string;
+  compat: Compatibility | undefined;
+}
+
+const listItems: ComponentListItemInfo[] = [
+  {
+    name: 'Case',
+    url: 'res/case_sample.glb',
+    compat: Compatibility.parseFromCompatString('case'),
+  },
+  {
+    name: '120mm Fan',
+    url: 'res/120mm_fan_sample.glb',
+    compat: Compatibility.parseFromCompatString('fan,120'),
+  },
+  {
+    name: 'atx power sample',
+    url: 'res/atx_power_sample.glb',
+    compat: Compatibility.parseFromCompatString('powersupply,ATX'),
+  },
+  {
+    name: 'atx motherboard sample',
+    url: 'res/atx_motherboard_sample.glb',
+    compat: Compatibility.parseFromCompatString('motherboard,ATX'),
+  },
+  {
+    name: 'lga1700 cpu sample',
+    url: 'res/cpu_sample.glb',
+    compat: Compatibility.parseFromCompatString('cpu,LGA1700'),
+  },
+  {
+    name: 'cooler sample',
+    url: 'res/cooler_sample.glb',
+    compat: Compatibility.parseFromCompatString('cooler,LGA1700'),
+  },
+  {
+    name: 'ddr4 ram sample',
+    url: 'res/ddr4_ram_sample.glb',
+    compat: Compatibility.parseFromCompatString('ram,DDR4'),
+  },
+  {
+    name: 'gpu_sample',
+    url: 'res/gpu_sample.glb',
+    compat: Compatibility.parseFromCompatString('pcie,x16'),
+  },
+  {
+    name: 'NVMe SSD',
+    url: 'res/nvme_ssd_sample.glb',
+    compat: Compatibility.parseFromCompatString('storage,NVMESSD'),
+  },
+];
+
+for (let i = 0; i < listItems.length; ++i) {
+  const item = listItems[i];
+  if (item.compat === undefined) {
+    throw new Error(`Failed to parse compat string for ${item.name}`);
+  }
+}
+
+function ComponentListPanel(props: ComponentListPanelProps): JSX.Element {
+  const { target, onSelected } = props;
+  onSelected;
+  return (
+    <ComponentListPanelDiv $isShowing={target !== undefined}>
+      <ComponentListPanelInnerDiv>
+        {target !== undefined
+          ? (target === 'root'
+              ? listItems
+              : listItems.filter(item => {
+                  const points = target.points;
+
+                  let isCompatible = false;
+                  for (let i = 0; i < points.length; ++i) {
+                    const point = points[i];
+                    if (
+                      target.checkPointAvailability(i) &&
+                      point.compatability.isCompatibleWith(item.compat!)
+                    ) {
+                      isCompatible = true;
+                      break;
+                    }
+                  }
+                  return isCompatible;
+                })
+            ).map(item => (
+              <TreeItemDiv key={item.name}>
+                <TreeItemTitleDiv>
+                  {item.name}
+                  <TreeItemDisposeButtonDiv
+                    onClick={() => onSelected(item.url)}
+                  >
+                    +
+                  </TreeItemDisposeButtonDiv>
+                </TreeItemTitleDiv>
+              </TreeItemDiv>
+            ))
+          : null}
+      </ComponentListPanelInnerDiv>
+    </ComponentListPanelDiv>
   );
 }
 
@@ -295,9 +450,48 @@ export default function PCCUIRoot(): JSX.Element {
   const [_, setRerenderState] = useState(false);
 
   const [baseModel, setBaseModel] = useState<PCCModel | undefined>(undefined);
+
   const onBaseModelChanged = useCallback((model: PCCModel | undefined) => {
     setBaseModel(model);
   }, []);
+
+  const [selectedTarget, setSelectedTarget] = useState<MountPoint | 'root'>();
+
+  const onComponentSelected = useCallback(
+    (modelUrl: string) => {
+      if (builder === undefined) {
+        return;
+      }
+
+      if (selectedTarget === undefined) {
+        return;
+      }
+
+      setSelectedTarget(undefined);
+
+      const runtime = builder.runtime;
+
+      (async () => {
+        const model = await runtime.addModel(modelUrl);
+        if (model === undefined) {
+          return;
+        }
+
+        if (selectedTarget === 'root') {
+          runtime.setBaseModel(model);
+          runtime.disposeUnboundedModels();
+          setRerenderState(x => !x);
+          return;
+        }
+
+        if (!selectedTarget.attach(model)) {
+          model.dispose(true);
+        }
+        setRerenderState(x => !x);
+      })();
+    },
+    [builder, selectedTarget],
+  );
 
   useEffect(() => {
     if (builder === undefined) {
@@ -353,10 +547,7 @@ export default function PCCUIRoot(): JSX.Element {
         const mountPoints = caseModel.mountPoints;
         for (let i = 0; i < mountPoints.length; ++i) {
           const mountPoint = mountPoints[i];
-          if (
-            !caseModel.isDisposed &&
-            mountPoint.attach(fanModels[fanModelIndex])
-          ) {
+          if (mountPoint.attach(fanModels[fanModelIndex])) {
             fanModelIndex += 1;
             await new Promise(resolve => setTimeout(resolve, 200));
           }
@@ -371,7 +562,7 @@ export default function PCCUIRoot(): JSX.Element {
         const mountPoints = caseModel.mountPoints;
         for (let i = 0; i < mountPoints.length; ++i) {
           const mountPoint = mountPoints[i];
-          if (!caseModel.isDisposed && mountPoint.attach(powserSupplyModel)) {
+          if (mountPoint.attach(powserSupplyModel)) {
             break;
           }
         }
@@ -387,7 +578,7 @@ export default function PCCUIRoot(): JSX.Element {
         const mountPoints = caseModel.mountPoints;
         for (let i = 0; i < mountPoints.length; ++i) {
           const mountPoint = mountPoints[i];
-          if (!caseModel.isDisposed && mountPoint.attach(motherBorardModel)) {
+          if (mountPoint.attach(motherBorardModel)) {
             await new Promise(resolve => setTimeout(resolve, 200));
             break;
           }
@@ -398,7 +589,7 @@ export default function PCCUIRoot(): JSX.Element {
         const mountPoints = motherBorardModel.mountPoints;
         for (let i = 0; i < mountPoints.length; ++i) {
           const mountPoint = mountPoints[i];
-          if (!motherBorardModel.isDisposed && mountPoint.attach(cpuModel)) {
+          if (mountPoint.attach(cpuModel)) {
             await new Promise(resolve => setTimeout(resolve, 200));
             break;
           }
@@ -409,7 +600,7 @@ export default function PCCUIRoot(): JSX.Element {
         const mountPoints = motherBorardModel.mountPoints;
         for (let i = 0; i < mountPoints.length; ++i) {
           const mountPoint = mountPoints[i];
-          if (!motherBorardModel.isDisposed && mountPoint.attach(coolerModel)) {
+          if (mountPoint.attach(coolerModel)) {
             await new Promise(resolve => setTimeout(resolve, 200));
             break;
           }
@@ -421,10 +612,7 @@ export default function PCCUIRoot(): JSX.Element {
         const mountPoints = motherBorardModel.mountPoints;
         for (let i = 0; i < mountPoints.length; ++i) {
           const mountPoint = mountPoints[i];
-          if (
-            !motherBorardModel.isDisposed &&
-            mountPoint.attach(ramModels[ramModelIndex])
-          ) {
+          if (mountPoint.attach(ramModels[ramModelIndex])) {
             ramModelIndex += 1;
             await new Promise(resolve => setTimeout(resolve, 200));
           }
@@ -439,10 +627,7 @@ export default function PCCUIRoot(): JSX.Element {
         const mountPoints = motherBorardModel.mountPoints;
         for (let i = 0; i < mountPoints.length; ++i) {
           const mountPoint = mountPoints[i];
-          if (
-            !motherBorardModel.isDisposed &&
-            mountPoint.attach(storageModel)
-          ) {
+          if (mountPoint.attach(storageModel)) {
             await new Promise(resolve => setTimeout(resolve, 200));
             break;
           }
@@ -453,7 +638,7 @@ export default function PCCUIRoot(): JSX.Element {
         const mountPoints = motherBorardModel.mountPoints;
         for (let i = 0; i < mountPoints.length; ++i) {
           const mountPoint = mountPoints[i];
-          if (!motherBorardModel.isDisposed && mountPoint.attach(gpuModel)) {
+          if (mountPoint.attach(gpuModel)) {
             await new Promise(resolve => setTimeout(resolve, 200));
             break;
           }
@@ -472,20 +657,20 @@ export default function PCCUIRoot(): JSX.Element {
         >
           <PCCRuntimeContext.Provider value={builder?.runtime}>
             {baseModel ? (
-              <TreePCCView model={baseModel} />
+              <TreePCCView
+                model={baseModel}
+                onClickEmptyMountPoint={setSelectedTarget}
+              />
             ) : (
-              <EmptyMountPointDiv>
-                <EmptyMountPointInnerDiv>
-                  <MountPointNameDiv>Base Model</MountPointNameDiv>
-                  <MountPointAttachHintDiv>
-                    click here to attach new component
-                  </MountPointAttachHintDiv>
-                </EmptyMountPointInnerDiv>
-              </EmptyMountPointDiv>
+              <EmptyMountPoint mountPoint="root" onClick={setSelectedTarget} />
             )}
           </PCCRuntimeContext.Provider>
         </TreeViewRerenderContext.Provider>
       </PcComponentsListDiv>
+      <ComponentListPanel
+        target={selectedTarget}
+        onSelected={onComponentSelected}
+      />
     </PCCUIRootDiv>
   );
 }
