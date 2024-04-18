@@ -131,6 +131,10 @@ export class PCCModel {
     rootWorldMatrix.decompose(clonedRoot.scaling);
 
     const nodeMap = new Map<Node, Node>();
+    const nodeInfoMap = new Map<string, PCCNodeInfo>();
+
+    clonedRoot.metadata = this.copyNodeInfo(this.root.metadata as PCCNodeInfo);
+    nodeInfoMap.set(clonedRoot.metadata.name, clonedRoot.metadata);
 
     const visited = new Set<Node>();
 
@@ -158,6 +162,14 @@ export class PCCModel {
       for (let i = 0; i < descendants.length; ++i) {
         const originalDescendant = descendants[i];
 
+        if (
+          // skip the attached model
+          (originalDescendant.metadata as PCCNodeInfo)?.rootCompatibility !==
+          undefined
+        ) {
+          continue;
+        }
+
         let clonedDescendant: Node;
         if (originalDescendant instanceof Mesh) {
           const instancedMesh = (clonedDescendant =
@@ -171,9 +183,17 @@ export class PCCModel {
           )!;
         }
         if (clonedDescendant.metadata) {
-          clonedDescendant.metadata = this.copyNodeInfo(
-            originalDescendant.metadata as PCCNodeInfo,
+          let nodeInfo = nodeInfoMap.get(
+            (originalDescendant.metadata as PCCNodeInfo).name,
           );
+          if (nodeInfo === undefined) {
+            nodeInfo = this.copyNodeInfo(
+              originalDescendant.metadata as PCCNodeInfo,
+            );
+            nodeInfoMap.set(nodeInfo.name, nodeInfo);
+          }
+
+          clonedDescendant.metadata = nodeInfo;
         }
 
         nodeMap.set(originalDescendant, clonedDescendant);
@@ -190,11 +210,7 @@ export class PCCModel {
     const animations: PCCAnimation[] = [];
 
     // update metadata references
-    for (const [_original, clone] of nodeMap) {
-      if (!clone.metadata) continue;
-
-      const nodeInfo = clone.metadata as PCCNodeInfo;
-
+    for (const nodeInfo of nodeInfoMap.values()) {
       const nodeInfoToggleTargets: TransformNode[] = [];
       for (let i = 0; i < nodeInfo.toggleTargets.length; ++i) {
         nodeInfoToggleTargets.push(
