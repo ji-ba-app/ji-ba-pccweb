@@ -45,8 +45,8 @@ function Root(): JSX.Element {
 }
 
 const rootDiv = document.createElement('div');
-rootDiv.style.width = '100vw';
-rootDiv.style.height = '100vh';
+rootDiv.style.width = '100%';
+rootDiv.style.height = '100%';
 rootDiv.style.margin = '0';
 rootDiv.style.padding = '0';
 document.body.appendChild(rootDiv);
