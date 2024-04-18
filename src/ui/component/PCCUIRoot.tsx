@@ -34,15 +34,15 @@ const TreeItemDiv = styled.div`
   padding-bottom: 0;
   box-sizing: border-box;
   width: 100%;
-  flex: 0 0 50px;
+  flex: 0 0 45px;
   flex-direction: column;
   text-align: center;
   vertical-align: middle;
 `;
 
-const TreeItemTitleDiv = styled.div`
+const TreeItemInnerDiv = styled.div`
   width: 100%;
-  height: 40px;
+  height: 45px;
   display: flex;
   flex-direction: row;
   justify-content: center;
@@ -150,6 +150,8 @@ function TreeItemToggle(props: TreeItemToggleProps): JSX.Element {
 }
 
 const TreeItemContentOuterDiv = styled.div`
+  padding-top: 5px;
+  padding-bottom: 5px;
   width: 100%;
   height: auto;
   display: flex;
@@ -182,7 +184,7 @@ const EmptyMountPointDiv = styled.div`
   padding-bottom: 0;
   box-sizing: border-box;
   width: 100%;
-  flex: 0 0 50px;
+  flex: 0 0 45px;
   flex-direction: column;
   text-align: center;
   vertical-align: middle;
@@ -260,7 +262,7 @@ function TreePCCView(props: TreePCCViewProps): JSX.Element {
   return (
     <>
       <TreeItemDiv>
-        <TreeItemTitleDiv>
+        <TreeItemInnerDiv>
           {model.toggleTargets.length > 0 ? (
             <TreeItemDropdownToggleDiv
               onClick={() => setIsShowingToggleTargets(!isShowingToggleTargets)}
@@ -273,7 +275,7 @@ function TreePCCView(props: TreePCCViewProps): JSX.Element {
           <TreeItemDisposeButtonDiv onClick={onDispose}>
             ✖
           </TreeItemDisposeButtonDiv>
-        </TreeItemTitleDiv>
+        </TreeItemInnerDiv>
         {isShowingToggleTargets ? (
           <TreeItemTogglesContainerDiv>
             {model.toggleTargets.map(toggleTarget => (
@@ -319,24 +321,89 @@ const ComponentListPanelDiv = styled.div<ComponentListPanelDivProps>`
   position: absolute;
   top: 0;
   left: ${props => (props.$isShowing ? '0' : '100%')};
+
   width: 100%;
   height: 100%;
+
   background-color: #b9b9b9;
   transition: left 0.2s;
 
-  padding: 10px;
-`;
-
-const ComponentListPanelInnerDiv = styled.div`
-  width: 100%;
-  height: 100%;
   display: flex;
   flex-direction: column;
 `;
 
+const ComponentListPanelTopBarDiv = styled.div`
+  width: 100%;
+  flex: 0 0 40px;
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  background-color: #919191;
+  color: white;
+`;
+
+const ComponentListPanelTopBarBackButtonDiv = styled.div`
+  width: 40px;
+  text-align: center;
+  align-items: center;
+  background-color: #919191;
+  color: white;
+  font-weight: bold;
+  font-size: 20px;
+`;
+
+const ComponentListPanelTopBarTitleDiv = styled.div`
+  font-size: 16px;
+  font-weight: bold;
+  text-align: center;
+  padding-right: 40px;
+  flex: 1;
+`;
+
+const ComponentListPanelListPaddingDiv = styled.div`
+  width: 100%;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+`;
+
+const ComponentListPanelListDiv = styled.div`
+  width: 100%;
+  height: auto;
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 5px;
+`;
+
+const ComponentListItemDiv = styled.div`
+  padding: 5px;
+  padding-bottom: 0;
+  box-sizing: border-box;
+  width: 100%;
+  flex: 0 0 45px;
+  flex-direction: column;
+  text-align: center;
+  vertical-align: middle;
+`;
+
+const ComponentListItemInnerDiv = styled.div`
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+  background-color: #d3d3d3;
+  color: black;
+  font-weight: bold;
+  font-size: 16px;
+`;
+
 interface ComponentListPanelProps {
   target: MountPoint | 'root' | undefined;
-  onSelected: (modelUrl: string) => void;
+  onSelected: (modelUrl: string | undefined) => void;
 }
 
 interface ComponentListItemInfo {
@@ -405,40 +472,49 @@ function ComponentListPanel(props: ComponentListPanelProps): JSX.Element {
   onSelected;
   return (
     <ComponentListPanelDiv $isShowing={target !== undefined}>
-      <ComponentListPanelInnerDiv>
-        {target !== undefined
-          ? (target === 'root'
-              ? listItems
-              : listItems.filter(item => {
-                  const points = target.points;
+      <ComponentListPanelTopBarDiv>
+        <ComponentListPanelTopBarBackButtonDiv
+          onClick={() => onSelected(undefined)}
+        >
+          ◀
+        </ComponentListPanelTopBarBackButtonDiv>
+        <ComponentListPanelTopBarTitleDiv>
+          attach to '{target === 'root' ? 'root' : target?.name}'
+        </ComponentListPanelTopBarTitleDiv>
+      </ComponentListPanelTopBarDiv>
+      <ComponentListPanelListPaddingDiv>
+        <ComponentListPanelListDiv>
+          {target !== undefined
+            ? (target === 'root'
+                ? listItems
+                : listItems.filter(item => {
+                    const points = target.points;
 
-                  let isCompatible = false;
-                  for (let i = 0; i < points.length; ++i) {
-                    const point = points[i];
-                    if (
-                      target.checkPointAvailability(i) &&
-                      point.compatability.isCompatibleWith(item.compat!)
-                    ) {
-                      isCompatible = true;
-                      break;
+                    let isCompatible = false;
+                    for (let i = 0; i < points.length; ++i) {
+                      const point = points[i];
+                      if (
+                        target.checkPointAvailability(i) &&
+                        point.compatability.isCompatibleWith(item.compat!)
+                      ) {
+                        isCompatible = true;
+                        break;
+                      }
                     }
-                  }
-                  return isCompatible;
-                })
-            ).map(item => (
-              <TreeItemDiv key={item.name}>
-                <TreeItemTitleDiv>
-                  {item.name}
-                  <TreeItemDisposeButtonDiv
+                    return isCompatible;
+                  })
+              ).map(item => (
+                <ComponentListItemDiv key={item.name}>
+                  <ComponentListItemInnerDiv
                     onClick={() => onSelected(item.url)}
                   >
-                    +
-                  </TreeItemDisposeButtonDiv>
-                </TreeItemTitleDiv>
-              </TreeItemDiv>
-            ))
-          : null}
-      </ComponentListPanelInnerDiv>
+                    {item.name}
+                  </ComponentListItemInnerDiv>
+                </ComponentListItemDiv>
+              ))
+            : null}
+        </ComponentListPanelListDiv>
+      </ComponentListPanelListPaddingDiv>
     </ComponentListPanelDiv>
   );
 }
@@ -458,7 +534,7 @@ export default function PCCUIRoot(): JSX.Element {
   const [selectedTarget, setSelectedTarget] = useState<MountPoint | 'root'>();
 
   const onComponentSelected = useCallback(
-    (modelUrl: string) => {
+    (modelUrl: string | undefined) => {
       if (builder === undefined) {
         return;
       }
@@ -468,6 +544,10 @@ export default function PCCUIRoot(): JSX.Element {
       }
 
       setSelectedTarget(undefined);
+
+      if (modelUrl === undefined) {
+        return;
+      }
 
       const runtime = builder.runtime;
 

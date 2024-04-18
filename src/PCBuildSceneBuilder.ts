@@ -1,12 +1,18 @@
 import { ArcRotateCamera } from '@babylonjs/core/Cameras/arcRotateCamera';
 import { Camera } from '@babylonjs/core/Cameras/camera';
 import { Engine } from '@babylonjs/core/Engines/engine';
-import { DirectionalLight } from '@babylonjs/core/Lights/directionalLight';
+// import { DirectionalLight } from '@babylonjs/core/Lights/directionalLight';
 import { HemisphericLight } from '@babylonjs/core/Lights/hemisphericLight';
-import { Color3, Color4 } from '@babylonjs/core/Maths/math.color';
+import { Color3 } from '@babylonjs/core/Maths/math.color';
 import { Vector3 } from '@babylonjs/core/Maths/math.vector';
 import { Scene } from '@babylonjs/core/scene';
 import { useEffect, useState } from 'react';
+import { Texture } from '@babylonjs/core/Materials/Textures/texture';
+import '@babylonjs/core/Materials/Textures/Loaders/envTextureLoader';
+import { CubeTexture } from '@babylonjs/core';
+import { CreateBox } from '@babylonjs/core/Meshes/Builders/boxBuilder';
+import { PBRMaterial } from '@babylonjs/core/Materials/PBR/pbrMaterial';
+
 import { PCCRuntime } from './runtime/PCCRuntime';
 import useEngine from './ui/hooks/useEngine';
 
@@ -25,7 +31,29 @@ export class PCBuildSceneBuilder {
   private _createScene(engine: Engine): [Scene, Camera, PCCRuntime] {
     const scene = new Scene(engine);
 
-    scene.clearColor = new Color4(0.9, 0.9, 0.9, 1.0);
+    const environmentTexture = CubeTexture.CreateFromPrefilteredData(
+      'res/studio.env',
+      scene,
+    );
+    scene.environmentTexture = environmentTexture;
+    scene.environmentIntensity = 0.1;
+
+    const blur = 0.6;
+
+    const hdrSkybox = CreateBox('hdrSkyBox', { size: 1000 }, scene);
+    const hdrSkyboxMaterial = new PBRMaterial('skyBox', scene);
+    hdrSkyboxMaterial.backFaceCulling = false;
+    hdrSkyboxMaterial.reflectionTexture = environmentTexture.clone();
+    if (hdrSkyboxMaterial.reflectionTexture) {
+      hdrSkyboxMaterial.reflectionTexture.coordinatesMode = Texture.SKYBOX_MODE;
+    }
+    hdrSkyboxMaterial.microSurface = 1.0 - blur;
+    hdrSkyboxMaterial.disableLighting = true;
+    hdrSkyboxMaterial.twoSidedLighting = true;
+    hdrSkybox.material = hdrSkyboxMaterial;
+    hdrSkybox.isPickable = false;
+    hdrSkybox.infiniteDistance = true;
+    hdrSkybox.ignoreCameraMaxZ = true;
 
     const degToRad = Math.PI / 180;
 
@@ -61,15 +89,15 @@ export class PCBuildSceneBuilder {
     hemisphericLight.specular = new Color3(0, 0, 0);
     hemisphericLight.groundColor = new Color3(1, 1, 1);
 
-    const directionalLight = new DirectionalLight(
-      'directionalLight', // name
-      new Vector3(0.5, -1, 1), // direction
-      scene,
-    );
-    directionalLight.intensity = 0.5;
-    directionalLight.autoCalcShadowZBounds = false;
-    directionalLight.autoUpdateExtends = false;
-    directionalLight.shadowOrthoScale = 0;
+    // const directionalLight = new DirectionalLight(
+    //   'directionalLight', // name
+    //   new Vector3(0.5, -1, 1), // direction
+    //   scene,
+    // );
+    // directionalLight.intensity = 0.5;
+    // directionalLight.autoCalcShadowZBounds = false;
+    // directionalLight.autoUpdateExtends = false;
+    // directionalLight.shadowOrthoScale = 0;
 
     const runtime = new PCCRuntime(scene);
     runtime.register();
