@@ -3,16 +3,17 @@ import { Camera } from '@babylonjs/core/Cameras/camera';
 import { Engine } from '@babylonjs/core/Engines/engine';
 // import { DirectionalLight } from '@babylonjs/core/Lights/directionalLight';
 import { HemisphericLight } from '@babylonjs/core/Lights/hemisphericLight';
-import { Color3 } from '@babylonjs/core/Maths/math.color';
+import { Color3, Color4 } from '@babylonjs/core/Maths/math.color';
 import { Vector3 } from '@babylonjs/core/Maths/math.vector';
 import { Scene } from '@babylonjs/core/scene';
 import { useEffect, useState } from 'react';
 import { Texture } from '@babylonjs/core/Materials/Textures/texture';
 import '@babylonjs/core/Materials/Textures/Loaders/envTextureLoader';
-import { CubeTexture } from '@babylonjs/core';
 import { CreateBox } from '@babylonjs/core/Meshes/Builders/boxBuilder';
 import { PBRMaterial } from '@babylonjs/core/Materials/PBR/pbrMaterial';
 
+import { CubeTexture } from '@babylonjs/core/Materials/Textures/cubeTexture';
+import { FramingBehavior } from '@babylonjs/core/Behaviors/Cameras/framingBehavior';
 import { PCCRuntime } from './runtime/PCCRuntime';
 import useEngine from './ui/hooks/useEngine';
 
@@ -30,7 +31,7 @@ export class PCBuildSceneBuilder {
 
   private _createScene(engine: Engine): [Scene, Camera, PCCRuntime] {
     const scene = new Scene(engine);
-
+    scene.clearColor = new Color4(1, 1, 1, 1);
     const environmentTexture = CubeTexture.CreateFromPrefilteredData(
       'res/studio.env',
       scene,
@@ -78,6 +79,14 @@ export class PCBuildSceneBuilder {
     camera.panningSensibility = 3000;
     camera.angularSensibilityX = 1000;
     camera.angularSensibilityY = 1000;
+
+    camera.useFramingBehavior = true;
+    const framingBehavior = camera.getBehaviorByName(
+      'Framing',
+    ) as FramingBehavior;
+    framingBehavior.framingTime = 0;
+    framingBehavior.elevationReturnTime = -1;
+
     this._camera = camera;
 
     const hemisphericLight = new HemisphericLight(
@@ -99,7 +108,7 @@ export class PCBuildSceneBuilder {
     // directionalLight.autoUpdateExtends = false;
     // directionalLight.shadowOrthoScale = 0;
 
-    const runtime = new PCCRuntime(scene);
+    const runtime = new PCCRuntime(scene, camera);
     runtime.register();
 
     return [scene, camera, runtime];

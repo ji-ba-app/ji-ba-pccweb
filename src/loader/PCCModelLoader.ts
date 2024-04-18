@@ -36,7 +36,7 @@ export class PCCModelLoader {
   ): Promise<PCCModel | undefined> {
     const uniqueModel = await this._uniqueModels.get(modelUrl);
     if (uniqueModel !== undefined) {
-      return uniqueModel.createInstance(uniqueModel.name + '_instance');
+      return uniqueModel.createInstance(uniqueModel.name);
     }
 
     let resolvePromise: (value: PCCModel | undefined) => void = null!;

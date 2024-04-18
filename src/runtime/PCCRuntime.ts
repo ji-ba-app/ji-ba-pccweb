@@ -1,5 +1,7 @@
 import { Scene } from '@babylonjs/core/scene';
 import { Observable } from '@babylonjs/core/Misc/observable';
+import { ArcRotateCamera } from '@babylonjs/core/Cameras/arcRotateCamera';
+import { FramingBehavior } from '@babylonjs/core/Behaviors/Cameras/framingBehavior';
 import { PCCModelLoader } from '../loader/PCCModelLoader';
 import { PCCModel } from './PCCModel';
 import { TaskExecutor } from './TaskExecutor';
@@ -9,6 +11,7 @@ export class PCCRuntime {
   private _taskExecutor: TaskExecutor;
 
   private _scene: Scene;
+  private _camera: ArcRotateCamera;
   private _models: PCCModel[] = [];
   private _isRegistered: boolean;
   private _updateBinded: () => void;
@@ -20,11 +23,12 @@ export class PCCRuntime {
 
   public onBaseModelChangedObservable: Observable<PCCModel | undefined>;
 
-  public constructor(scene: Scene) {
+  public constructor(scene: Scene, camera: ArcRotateCamera) {
     this._loader = new PCCModelLoader(scene);
     this._taskExecutor = new TaskExecutor();
 
     this._scene = scene;
+    this._camera = camera;
     this._models = [];
     this._isRegistered = false;
     this._updateBinded = (): void =>
@@ -115,6 +119,17 @@ export class PCCRuntime {
     } else {
       this._baseModel = model;
       this._baseModel.root.setEnabled(true);
+    }
+
+    if (this._scene.meshes.length > 0) {
+      const worldExtends = this._scene.getWorldExtends(function (mesh) {
+        return mesh.isVisible && mesh.isEnabled();
+      });
+
+      const framingBehavior = this._camera.getBehaviorByName(
+        'Framing',
+      ) as FramingBehavior;
+      framingBehavior.zoomOnBoundingInfo(worldExtends.min, worldExtends.max);
     }
 
     this.onBaseModelChangedObservable.notifyObservers(this._baseModel);

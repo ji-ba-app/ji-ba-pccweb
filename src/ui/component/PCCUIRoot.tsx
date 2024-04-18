@@ -42,7 +42,7 @@ const TreeItemDiv = styled.div`
 
 const TreeItemInnerDiv = styled.div`
   width: 100%;
-  height: 45px;
+  height: 40px;
   display: flex;
   flex-direction: row;
   justify-content: center;

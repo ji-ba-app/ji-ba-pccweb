@@ -124,6 +124,8 @@ export class PCCModel {
   }
 
   public createInstance(name: string): PCCModel {
+    // todo: perfect clone when animation is playing
+
     const clonedRoot = this.root.clone(this.root.name, null, true)!;
     clonedRoot.setEnabled(false);
 
