@@ -122,8 +122,9 @@ export class PCCRuntime {
     }
 
     if (this._baseModel !== undefined) {
+      const baseModelMeshes = new Set(this._baseModel.root.getChildMeshes());
       const worldExtends = this._scene.getWorldExtends(function (mesh) {
-        return mesh.isVisible && mesh.isEnabled();
+        return baseModelMeshes.has(mesh);
       });
 
       const framingBehavior = this._camera.getBehaviorByName(
