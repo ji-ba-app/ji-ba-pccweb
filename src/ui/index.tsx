@@ -1,6 +1,6 @@
 import '@babylonjs/core/Materials/PBR/pbrSubSurfaceConfiguration';
 import ReactDOM from 'react-dom/client';
-import { JSX, StrictMode, useEffect, useRef, useState } from 'react';
+import { JSX, useEffect, useRef, useState } from 'react';
 import styled from 'styled-components';
 import { CanvasContextProvider } from './context/CanvasContext';
 import PCCUIRoot from './component/PCCUIRoot';
@@ -66,7 +66,7 @@ document.body.appendChild(rootDiv);
 
 const reactRoot = ReactDOM.createRoot(rootDiv);
 reactRoot.render(
-  <StrictMode>
-    <Root />
-  </StrictMode>,
+  // <StrictMode>
+  <Root />,
+  // </StrictMode>
 );
