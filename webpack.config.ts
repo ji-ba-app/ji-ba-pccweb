@@ -6,7 +6,7 @@ import htmlWebpackPlugin from 'html-webpack-plugin';
 import webpack from 'webpack';
 import type { Configuration as WebpackDevServerConfiguration } from 'webpack-dev-server';
 
-const PORT = 20310;
+const PORT = 8080;
 
 function getIpAddress() {
   var ifaces = os.networkInterfaces();
