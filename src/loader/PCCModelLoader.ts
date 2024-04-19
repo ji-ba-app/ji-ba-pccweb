@@ -11,7 +11,7 @@ import { BaseTexture } from '@babylonjs/core/Materials/Textures/baseTexture';
 import { MountPoint } from '@/runtime/MountPoint';
 import { ToggleTarget } from '@/runtime/ToggleTarget';
 import { TaskExecutor } from '@/runtime/TaskExecutor';
-import { staticAssetServerUrl } from '../Constants';
+import { getStaticAssetServerUrl } from '../Constants';
 import { PCCAnimation } from '../runtime/PCCAnimation';
 import { PCCModel } from '../runtime/PCCModel';
 import { PCCNodeInfo, PCCNodeDecoder } from './PCCNodeDecoder';
@@ -134,6 +134,7 @@ export class PCCModelLoader {
   }
 
   private async _loadAssetContainer(modelUrl: string): Promise<AssetContainer> {
+    const staticAssetServerUrl = await getStaticAssetServerUrl();
     return SceneLoader.LoadAssetContainerAsync(
       staticAssetServerUrl,
       modelUrl,
