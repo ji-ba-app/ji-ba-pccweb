@@ -13,9 +13,9 @@ export async function getStaticAssetServerUrl() {
   }
   try {
     const res = await Promise.race<string>([
-      fetch(`${staticAssetServerUrlDefault}res/studio.env`).then(
-        () => staticAssetServerUrlDefault,
-      ),
+      fetch(`${staticAssetServerUrlDefault}res/studio.env`)
+        .then(res => res.text())
+        .then(() => staticAssetServerUrlDefault),
       new Promise(function (resolve) {
         setTimeout(function () {
           resolve(staticAssetServerUrlForCN);
