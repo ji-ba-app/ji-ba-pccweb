@@ -13,7 +13,9 @@ export async function getStaticAssetServerUrl() {
   }
   try {
     const res = await Promise.race<string>([
-      fetch(`${staticAssetServerUrlDefault}res/studio.env`)
+      fetch(`${staticAssetServerUrlDefault}res/studio.env`, {
+        cache: 'no-cache',
+      })
         .then(res => res.text())
         .then(() => staticAssetServerUrlDefault),
       new Promise(function (resolve) {
