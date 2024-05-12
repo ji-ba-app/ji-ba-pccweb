@@ -1,4 +1,3 @@
-import os from 'os';
 import path from 'path';
 import copyWebpackPlugin from 'copy-webpack-plugin';
 import eslintPlugin from 'eslint-webpack-plugin';
@@ -7,23 +6,6 @@ import webpack from 'webpack';
 import type { Configuration as WebpackDevServerConfiguration } from 'webpack-dev-server';
 
 const PORT = 8080;
-
-function getIpAddress() {
-  var ifaces = os.networkInterfaces();
-
-  for (const dev in ifaces) {
-    let iface = ifaces[dev]!;
-
-    for (let i = 0; i < iface.length; ++i) {
-      let { family, address, internal } = iface[i];
-
-      if (family === 'IPv4' && address !== '127.0.0.1' && !internal) {
-        return address;
-      }
-    }
-  }
-  return '127.0.0.1';
-}
 
 export default (
   env: any,
@@ -74,11 +56,6 @@ export default (
     }),
     new copyWebpackPlugin({
       patterns: [{ from: 'res', to: 'res' }],
-    }),
-    new webpack.DefinePlugin({
-      SERVER_URL: env.production
-        ? `'${'https://3Ddemo.jiba201.com/'}'`
-        : `'http://${getIpAddress()}:${PORT}/'`,
     }),
   ],
   devServer: {
