@@ -14,6 +14,18 @@ interface PCCRootTransformNode extends TransformNode {
   metadata: PCCNodeInfo & { rootCompatibility: Compatibility };
 }
 
+const FileNameMap: Record<string, string | undefined> = {
+  case_sample: '机箱',
+  '120mm_fan_sample': '120mm 风扇',
+  atx_motherboard_sample: 'ATX 主板',
+  cooler_sample: '风冷散热',
+  cpu_sample: 'CPU',
+  gpu_sample: 'GPU',
+  ddr4_ram_sample: 'DDR4 内存条',
+  nvme_ssd_sample: '固态硬盘',
+  atx_power_sample: 'ATX 电源',
+};
+
 /**
  * Describe a PC componant model
  */
@@ -81,7 +93,7 @@ export class PCCModel {
     this.taskExecutor = taskExecutor;
     this.root = root;
     this.url = url;
-    this.name = name;
+    this.name = FileNameMap[name] || name;
     this.type = type;
     this.toggleTargets = toggleTargets;
     for (let i = 0; i < toggleTargets.length; ++i) {

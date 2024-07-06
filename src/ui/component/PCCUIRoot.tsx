@@ -1,6 +1,8 @@
 import styled from 'styled-components';
 import {
+  Dispatch,
   JSX,
+  SetStateAction,
   createContext,
   useCallback,
   useContext,
@@ -13,6 +15,7 @@ import { PCCModel } from '@/runtime/PCCModel';
 import { ToggleTarget } from '@/runtime/ToggleTarget';
 import { PCCRuntime } from '@/runtime/PCCRuntime';
 import { MountPoint } from '@/runtime/MountPoint';
+import { MPNameMap } from '@/Constants';
 import { verticalUiSize, horizontalUiSize } from '..';
 import { ComponentListPanel } from './ComponentListPanel';
 import { LoadingScreen } from './LoadingScreen';
@@ -48,6 +51,7 @@ const TreeItemDiv = styled.div`
   flex-direction: column;
   text-align: center;
   vertical-align: middle;
+  user-select: none;
 `;
 
 const TreeItemInnerDiv = styled.div`
@@ -61,6 +65,7 @@ const TreeItemInnerDiv = styled.div`
   color: white;
   font-weight: bold;
   font-size: 16px;
+  cursor: pointer;
 `;
 
 const TreeItemDropdownToggleDiv = styled.div`
@@ -72,16 +77,6 @@ const TreeItemDropdownToggleDiv = styled.div`
   font-weight: bold;
   font-size: 20px;
   position: relative;
-`;
-
-const ToggleTargetHintDiv = styled.div`
-  width: 100px;
-  font-size: 12px;
-  font-weight: normal;
-  color: #d8d8d8;
-  position: absolute;
-  top: calc(50% - 6px);
-  left: 25px;
 `;
 
 const TreeItemTitleInnerDiv = styled.div`
@@ -134,6 +129,14 @@ const TreeItemToggleDiv = styled.div<TreeItemToggleDivProps>`
   transition: opacity 0.2s;
 `;
 
+const ToggleNameMp: Record<string, string | undefined> = {
+  drive_holder: '机箱侧板（后）',
+  front_panel: '机箱前板',
+  side_armour: '机箱螺丝',
+  side_glass: '机箱侧板（前）',
+  power_nail: '电源螺丝',
+};
+
 const TreeViewRerenderContext = createContext<() => void>(() => {});
 
 interface TreeItemToggleProps {
@@ -153,7 +156,7 @@ function TreeItemToggle(props: TreeItemToggleProps): JSX.Element {
   return (
     <TreeItemToggleOuterDiv>
       <TreeItemToggleDiv onClick={onToggle} $enabled={toggleTarget.enabled}>
-        {toggleTarget.name}
+        {ToggleNameMp[toggleTarget.name] || toggleTarget.name}
       </TreeItemToggleDiv>
     </TreeItemToggleOuterDiv>
   );
@@ -209,6 +212,7 @@ const EmptyMountPointInnerDiv = styled.div`
   align-items: center;
   background-color: #769955;
   color: white;
+  cursor: pointer;
 `;
 
 const MountPointNameDiv = styled.div`
@@ -222,6 +226,7 @@ const MountPointAttachHintDiv = styled.div`
   font-weight: normal;
   color: #d8d8d8;
   padding-right: 10px;
+  cursor: pointer;
 `;
 
 interface EmptyMountPointProps {
@@ -232,17 +237,16 @@ interface EmptyMountPointProps {
 function EmptyMountPoint(props: EmptyMountPointProps): JSX.Element {
   const { mountPoint, onClick } = props;
 
+  const innerName =
+    typeof mountPoint === 'string' ? mountPoint : mountPoint.name;
+
+  const name = MPNameMap[innerName] || innerName;
+
   return (
-    <EmptyMountPointDiv
-      key={typeof mountPoint === 'string' ? mountPoint : mountPoint.name}
-    >
+    <EmptyMountPointDiv key={name}>
       <EmptyMountPointInnerDiv onClick={() => onClick(mountPoint)}>
-        <MountPointNameDiv>
-          {typeof mountPoint === 'string' ? mountPoint : mountPoint.name}
-        </MountPointNameDiv>
-        <MountPointAttachHintDiv>
-          click here to attach new component
-        </MountPointAttachHintDiv>
+        <MountPointNameDiv>{name}</MountPointNameDiv>
+        <MountPointAttachHintDiv>点击加载新部件</MountPointAttachHintDiv>
       </EmptyMountPointInnerDiv>
     </EmptyMountPointDiv>
   );
@@ -278,7 +282,6 @@ function TreePCCView(props: TreePCCViewProps): JSX.Element {
               onClick={() => setIsShowingToggleTargets(!isShowingToggleTargets)}
             >
               {isShowingToggleTargets ? '▼' : '▶'}
-              <ToggleTargetHintDiv>Toggle Targets</ToggleTargetHintDiv>
             </TreeItemDropdownToggleDiv>
           ) : null}
           <TreeItemTitleInnerDiv>{model.name}</TreeItemTitleInnerDiv>
@@ -323,15 +326,17 @@ function TreePCCView(props: TreePCCViewProps): JSX.Element {
   );
 }
 
-export default function PCCUIRoot(): JSX.Element {
+export default function PCCUIRoot(props: {
+  percent: number;
+  setPrecent: Dispatch<SetStateAction<number>>;
+}): JSX.Element {
+  const { percent, setPrecent } = props;
   const builder = usePCBuildSceneBuilder();
 
   const [isInitialized, setIsInitialized] = useState(false);
   const [_, setRerenderState] = useState(false);
 
   const [baseModel, setBaseModel] = useState<PCCModel | undefined>(undefined);
-
-  const [isLoading, setIsLoading] = useState(true);
 
   const onBaseModelChanged = useCallback((model: PCCModel | undefined) => {
     setBaseModel(model);
@@ -357,7 +362,7 @@ export default function PCCUIRoot(): JSX.Element {
 
       const runtime = builder.runtime;
 
-      setIsLoading(true);
+      // setPrecent(0);
       (async () => {
         try {
           const model = await runtime.addModel(modelUrl);
@@ -377,7 +382,7 @@ export default function PCCUIRoot(): JSX.Element {
           }
           setRerenderState(x => !x);
         } finally {
-          setIsLoading(false);
+          // setPrecent(100);
         }
       })();
     },
@@ -400,42 +405,82 @@ export default function PCCUIRoot(): JSX.Element {
 
     runtime.onBaseModelChangedObservable.add(onBaseModelChanged);
 
-    (async () => {
-      const caseModel = (await runtime.addModel('res/case_sample.glb'))!;
-      runtime.setBaseModel(caseModel);
+    function increaseTo(end: number) {
+      return new Promise<void>(resolve => {
+        const id = setInterval(function () {
+          setPrecent(prev => {
+            if (prev >= end) {
+              clearInterval(id);
+              resolve();
+              return prev;
+            }
+            return prev + 1;
+          });
+        }, 100);
+      });
+    }
 
-      const fanModels: PCCModel[] = [];
-      for (let i = 0; i < 5; ++i) {
+    (async () => {
+      const [caseModel] = await Promise.all([
+        runtime.addModel('res/case_sample.glb'),
+        increaseTo(70),
+      ]);
+
+      runtime.setBaseModel(caseModel!);
+
+      const [motherBorardModel] = await Promise.all([
+        runtime.addModel('res/atx_motherboard_sample.glb'),
+        increaseTo(80),
+      ]);
+
+      const [coolerModel] = await Promise.all([
+        runtime.addModel('res/cooler_sample.glb'),
+        increaseTo(85),
+      ]);
+
+      const [gpuModel] = await Promise.all([
+        runtime.addModel('res/gpu_sample.glb'),
+        increaseTo(90),
+      ]);
+
+      const [powserSupplyModel] = await Promise.all([
+        runtime.addModel('res/atx_power_sample.glb'),
+        increaseTo(95),
+      ]);
+
+      const [fanModel] = await Promise.all([
+        runtime.addModel('res/120mm_fan_sample.glb'),
+        increaseTo(97),
+      ]);
+
+      const fanModels: PCCModel[] = [fanModel!];
+      for (let i = 0; i < 4; ++i) {
         const fanModel = await runtime.addModel('res/120mm_fan_sample.glb')!;
         fanModels.push(fanModel!);
       }
 
-      const powserSupplyModel = (await runtime.addModel(
-        'res/atx_power_sample.glb',
-      ))!;
+      const [ramModel] = await Promise.all([
+        runtime.addModel('res/ddr4_ram_sample.glb'),
+        increaseTo(99),
+      ]);
 
-      const motherBorardModel = (await runtime.addModel(
-        'res/atx_motherboard_sample.glb',
-      ))!;
-
-      const cpuModel = (await runtime.addModel('res/cpu_sample.glb'))!;
-
-      const coolerModel = (await runtime.addModel('res/cooler_sample.glb'))!;
-
-      const ramModels: PCCModel[] = [];
-      for (let i = 0; i < 2; ++i) {
+      const ramModels: PCCModel[] = [ramModel!];
+      for (let i = 0; i < 1; ++i) {
         const ramModel = (await runtime.addModel('res/ddr4_ram_sample.glb'))!;
         ramModels.push(ramModel);
       }
 
-      const gpuModel = (await runtime.addModel('res/gpu_sample.glb'))!;
-      const storageModel = (await runtime.addModel('res/nvme_ssd_sample.glb'))!;
+      const [cpuModel, storageModel] = await Promise.all([
+        runtime.addModel('res/cpu_sample.glb'),
+        runtime.addModel('res/nvme_ssd_sample.glb'),
+        increaseTo(100),
+      ]);
 
       await new Promise(resolve => setTimeout(resolve, 100));
 
       {
         let fanModelIndex = 0;
-        const mountPoints = caseModel.mountPoints;
+        const mountPoints = caseModel!.mountPoints;
         for (let i = 0; i < mountPoints.length; ++i) {
           const mountPoint = mountPoints[i];
           if (mountPoint.attach(fanModels[fanModelIndex])) {
@@ -450,26 +495,26 @@ export default function PCCUIRoot(): JSX.Element {
       }
 
       {
-        const mountPoints = caseModel.mountPoints;
+        const mountPoints = caseModel!.mountPoints;
         for (let i = 0; i < mountPoints.length; ++i) {
           const mountPoint = mountPoints[i];
-          if (mountPoint.attach(powserSupplyModel)) {
+          if (mountPoint.attach(powserSupplyModel!)) {
             break;
           }
         }
       }
 
-      const driveHolder = caseModel.toggleTargets.find(
+      const driveHolder = caseModel!.toggleTargets.find(
         target => target.name === 'drive_holder',
       )!;
       driveHolder;
       // driveHolder.setEnabled(false);
 
       {
-        const mountPoints = caseModel.mountPoints;
+        const mountPoints = caseModel!.mountPoints;
         for (let i = 0; i < mountPoints.length; ++i) {
           const mountPoint = mountPoints[i];
-          if (mountPoint.attach(motherBorardModel)) {
+          if (mountPoint.attach(motherBorardModel!)) {
             await new Promise(resolve => setTimeout(resolve, 200));
             break;
           }
@@ -477,10 +522,10 @@ export default function PCCUIRoot(): JSX.Element {
       }
 
       {
-        const mountPoints = motherBorardModel.mountPoints;
+        const mountPoints = motherBorardModel!.mountPoints;
         for (let i = 0; i < mountPoints.length; ++i) {
           const mountPoint = mountPoints[i];
-          if (mountPoint.attach(cpuModel)) {
+          if (mountPoint.attach(cpuModel!)) {
             await new Promise(resolve => setTimeout(resolve, 200));
             break;
           }
@@ -488,10 +533,10 @@ export default function PCCUIRoot(): JSX.Element {
       }
 
       {
-        const mountPoints = motherBorardModel.mountPoints;
+        const mountPoints = motherBorardModel!.mountPoints;
         for (let i = 0; i < mountPoints.length; ++i) {
           const mountPoint = mountPoints[i];
-          if (mountPoint.attach(coolerModel)) {
+          if (mountPoint.attach(coolerModel!)) {
             await new Promise(resolve => setTimeout(resolve, 200));
             break;
           }
@@ -500,7 +545,7 @@ export default function PCCUIRoot(): JSX.Element {
 
       {
         let ramModelIndex = 0;
-        const mountPoints = motherBorardModel.mountPoints;
+        const mountPoints = motherBorardModel!.mountPoints;
         for (let i = 0; i < mountPoints.length; ++i) {
           const mountPoint = mountPoints[i];
           if (mountPoint.attach(ramModels[ramModelIndex])) {
@@ -515,10 +560,10 @@ export default function PCCUIRoot(): JSX.Element {
       }
 
       {
-        const mountPoints = motherBorardModel.mountPoints;
+        const mountPoints = motherBorardModel!.mountPoints;
         for (let i = 0; i < mountPoints.length; ++i) {
           const mountPoint = mountPoints[i];
-          if (mountPoint.attach(storageModel)) {
+          if (mountPoint.attach(storageModel!)) {
             await new Promise(resolve => setTimeout(resolve, 200));
             break;
           }
@@ -526,10 +571,10 @@ export default function PCCUIRoot(): JSX.Element {
       }
 
       {
-        const mountPoints = motherBorardModel.mountPoints;
+        const mountPoints = motherBorardModel!.mountPoints;
         for (let i = 0; i < mountPoints.length; ++i) {
           const mountPoint = mountPoints[i];
-          if (mountPoint.attach(gpuModel)) {
+          if (mountPoint.attach(gpuModel!)) {
             await new Promise(resolve => setTimeout(resolve, 200));
             break;
           }
@@ -537,14 +582,12 @@ export default function PCCUIRoot(): JSX.Element {
       }
 
       setRerenderState(x => !x);
-
-      setIsLoading(false);
     })();
   }, [builder, isInitialized]);
 
   const loadingScreen = useMemo(() => {
-    return <LoadingScreen isShowing={isLoading} />;
-  }, [isLoading]);
+    return <LoadingScreen isShowing={Boolean(percent < 100)} />;
+  }, [percent]);
 
   return (
     <PCCUIRootDiv>
