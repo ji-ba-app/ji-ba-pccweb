@@ -2,6 +2,7 @@ import styled from 'styled-components';
 import { JSX } from 'react';
 import { Compatibility } from '@/loader/Compatibility';
 import { MountPoint } from '@/runtime/MountPoint';
+import { MPNameMap } from '@/Constants';
 
 interface ComponentListPanelDivProps {
   $isShowing: boolean;
@@ -89,6 +90,7 @@ const ComponentListItemInnerDiv = styled.div`
   color: black;
   font-weight: bold;
   font-size: 16px;
+  cursor: pointer;
 `;
 
 interface ComponentListPanelProps {
@@ -104,47 +106,47 @@ interface ComponentListItemInfo {
 
 const listItems: ComponentListItemInfo[] = [
   {
-    name: 'Case',
+    name: '机箱',
     url: 'res/case_sample.glb',
     compat: Compatibility.parseFromCompatString('case'),
   },
   {
-    name: '120mm Fan',
+    name: '120mm 风扇',
     url: 'res/120mm_fan_sample.glb',
     compat: Compatibility.parseFromCompatString('fan,120'),
   },
   {
-    name: 'atx power sample',
+    name: 'ATX 电源',
     url: 'res/atx_power_sample.glb',
     compat: Compatibility.parseFromCompatString('powersupply,ATX'),
   },
   {
-    name: 'atx motherboard sample',
+    name: 'ATX 主板',
     url: 'res/atx_motherboard_sample.glb',
     compat: Compatibility.parseFromCompatString('motherboard,ATX'),
   },
   {
-    name: 'lga1700 cpu sample',
+    name: 'Intel CPU',
     url: 'res/cpu_sample.glb',
     compat: Compatibility.parseFromCompatString('cpu,LGA1700'),
   },
   {
-    name: 'cooler sample',
+    name: '风冷散热',
     url: 'res/cooler_sample.glb',
     compat: Compatibility.parseFromCompatString('cooler,LGA1700'),
   },
   {
-    name: 'ddr4 ram sample',
+    name: 'DDR4 内存条',
     url: 'res/ddr4_ram_sample.glb',
     compat: Compatibility.parseFromCompatString('ram,DDR4'),
   },
   {
-    name: 'gpu_sample',
+    name: 'NVIDIA GPU',
     url: 'res/gpu_sample.glb',
     compat: Compatibility.parseFromCompatString('pcie,x16'),
   },
   {
-    name: 'NVMe SSD',
+    name: '固态硬盘',
     url: 'res/nvme_ssd_sample.glb',
     compat: Compatibility.parseFromCompatString('storage,NVMESSD'),
   },
@@ -171,7 +173,11 @@ export function ComponentListPanel(
           ◀
         </ComponentListPanelTopBarBackButtonDiv>
         <ComponentListPanelTopBarTitleDiv>
-          attach to '{target === 'root' ? 'root' : target?.name}'
+          添加到{' '}
+          {target === 'root'
+            ? 'ROOT'
+            : MPNameMap[target?.name || ''] || target?.name}{' '}
+          位置
         </ComponentListPanelTopBarTitleDiv>
       </ComponentListPanelTopBarDiv>
       <ComponentListPanelListPaddingDiv>

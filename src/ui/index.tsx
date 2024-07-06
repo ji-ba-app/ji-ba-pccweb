@@ -1,7 +1,7 @@
-import '@babylonjs/core/Materials/PBR/pbrSubSurfaceConfiguration';
 import ReactDOM from 'react-dom/client';
 import { JSX, useEffect, useRef, useState } from 'react';
 import styled from 'styled-components';
+import { Line } from 'rc-progress';
 import { CanvasContextProvider } from './context/CanvasContext';
 import PCCUIRoot from './component/PCCUIRoot';
 
@@ -37,6 +37,7 @@ const RenderCanvas = styled.canvas`
 
 function Root(): JSX.Element {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const [percent, setPercent] = useState(0);
   const [canvas, setCanvas] = useState<HTMLCanvasElement | null>(null);
 
   useEffect(() => {
@@ -49,9 +50,44 @@ function Root(): JSX.Element {
 
   return (
     <AppRootDiv>
+      <div
+        style={{
+          display: percent < 100 ? 'flex' : 'none',
+          alignItems: 'center',
+          justifyContent: 'center',
+          position: 'absolute',
+          width: '100%',
+          height: '100%',
+          backgroundColor: 'black',
+          opacity: 0.6,
+          zIndex: 100,
+        }}
+      >
+        <div
+          style={{
+            width: '50%',
+            maxWidth: 1000,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <Line percent={percent} strokeWidth={8} trailWidth={8} />
+          <span
+            style={{
+              position: 'absolute',
+              alignSelf: 'center',
+              userSelect: 'none',
+              opacity: 0.5,
+            }}
+          >
+            loading...
+          </span>
+        </div>
+      </div>
       <RenderCanvas ref={canvasRef} />
       <CanvasContextProvider canvas={canvas}>
-        <PCCUIRoot />
+        <PCCUIRoot percent={percent} setPrecent={setPercent} />
       </CanvasContextProvider>
     </AppRootDiv>
   );
